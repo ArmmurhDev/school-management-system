@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T&T School - Excellence in Education</title>
+    <title>T&T School - Contact Us</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -114,6 +114,11 @@
             color: var(--accent-blue);
         }
         
+        nav ul li a.active {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
         .mobile-menu-btn {
             display: none;
             background: none;
@@ -123,16 +128,16 @@
             cursor: pointer;
         }
         
-        /* Hero Section */
-        .hero {
+        /* Contact Hero */
+        .contact-hero {
             background: linear-gradient(135deg, var(--light-bg) 0%, #E3F2FD 100%);
-            padding: 150px 0 100px;
+            padding: 150px 0 60px;
             margin-top: 80px;
             position: relative;
             overflow: hidden;
         }
         
-        .hero::before {
+        .contact-hero::before {
             content: "";
             position: absolute;
             width: 300px;
@@ -143,7 +148,7 @@
             right: -100px;
         }
         
-        .hero::after {
+        .contact-hero::after {
             content: "";
             position: absolute;
             width: 200px;
@@ -154,65 +159,28 @@
             left: -80px;
         }
         
-        .hero-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .contact-hero .container {
             position: relative;
             z-index: 1;
         }
         
-        .hero-text {
-            flex: 1;
-            max-width: 600px;
-        }
-        
-        .hero-text h2 {
+        .contact-hero h1 {
             font-size: 3rem;
-            line-height: 1.2;
-            margin-bottom: 20px;
-            color: var(--primary-dark);
-        }
-        
-        .hero-text p {
-            font-size: 1.2rem;
-            color: var(--text-light);
-            margin-bottom: 30px;
-        }
-        
-        .btn {
-            display: inline-block;
-            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
-            color: var(--white);
-            padding: 14px 32px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 80, 158, 0.2);
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 80, 158, 0.3);
-        }
-        
-        .hero-image {
-            flex: 1;
+            margin-bottom: 15px;
             text-align: center;
         }
         
-        .hero-image img {
-            max-width: 100%;
-            border-radius: 10px;
-            box-shadow: 0 15px 30px rgba(0, 51, 102, 0.15);
+        .contact-hero p {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
         }
         
-        /* About Section */
-        .about {
-            padding: 100px 0;
+        /* Contact Section */
+        .contact-section {
+            padding: 80px 0;
             background-color: var(--white);
         }
         
@@ -240,166 +208,223 @@
             border-radius: 2px;
         }
         
-        .about-content {
-            display: flex;
-            align-items: center;
+        .contact-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 60px;
         }
         
-        .about-text {
-            flex: 1;
+        /* Contact Form */
+        .contact-form-container {
+            background-color: var(--light-bg);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.08);
         }
         
-        .about-text h3 {
+        .contact-form-container h3 {
             font-size: 1.8rem;
+            margin-bottom: 25px;
+            color: var(--primary-medium);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-light);
+        }
+        
+        textarea.form-control {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
+            color: var(--white);
+            padding: 14px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 80, 158, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 80, 158, 0.3);
+        }
+        
+        /* Contact Info */
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .info-card {
+            background-color: var(--light-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.08);
+        }
+        
+        .info-card h3 {
+            font-size: 1.5rem;
             margin-bottom: 20px;
             color: var(--primary-medium);
         }
         
-        .about-text p {
-            margin-bottom: 25px;
-            color: var(--text-light);
-        }
-        
-        .about-features {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-top: 30px;
-        }
-        
-        .feature-item {
+        .info-item {
             display: flex;
             align-items: flex-start;
+            margin-bottom: 20px;
         }
         
-        .feature-icon {
-            width: 40px;
-            height: 40px;
-            background-color: var(--light-bg);
+        .info-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--white);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-right: 15px;
             flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0, 51, 102, 0.1);
         }
         
-        .feature-icon i {
+        .info-icon i {
             color: var(--primary-medium);
             font-size: 1.2rem;
         }
         
-        .about-image {
-            flex: 1;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 15px 30px rgba(0, 51, 102, 0.1);
+        .info-text h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
         }
         
-        .about-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-            transition: transform 0.5s ease;
+        .info-text p {
+            color: var(--text-light);
         }
         
-        .about-image img:hover {
-            transform: scale(1.03);
+        .hours-list {
+            list-style: none;
         }
         
-        /* Testimonials Section */
-        .testimonials {
-            padding: 100px 0;
+        .hours-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .hours-list li:last-child {
+            border-bottom: none;
+        }
+        
+        /* FAQ Section */
+        .faq-section {
+            padding: 80px 0;
             background-color: var(--light-bg);
         }
         
-        .testimonial-slider {
-            position: relative;
+        .faq-container {
             max-width: 900px;
             margin: 0 auto;
         }
         
-        .testimonial-item {
+        .faq-item {
             background-color: var(--white);
-            padding: 40px;
+            margin-bottom: 15px;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.08);
-            margin: 0 15px;
-            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 51, 102, 0.08);
+            transition: all 0.3s ease;
         }
         
-        .testimonial-item::before {
-            content: "\201C";
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            font-size: 4rem;
-            color: var(--primary-light);
-            opacity: 0.3;
-            font-family: serif;
-        }
-        
-        .testimonial-content {
-            margin-bottom: 25px;
-            font-size: 1.1rem;
-            color: var(--text-light);
-            font-style: italic;
-            line-height: 1.8;
-        }
-        
-        .testimonial-author {
+        .faq-question {
+            padding: 25px 30px;
+            cursor: pointer;
             display: flex;
+            justify-content: space-between;
             align-items: center;
         }
         
-        .author-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            overflow: hidden;
-            margin-right: 15px;
-            border: 3px solid var(--primary-light);
+        .faq-question h3 {
+            font-size: 1.2rem;
+            color: var(--primary-dark);
+            margin: 0;
         }
         
-        .author-avatar img {
+        .faq-question i {
+            color: var(--primary-medium);
+            transition: transform 0.3s;
+        }
+        
+        .faq-answer {
+            padding: 0 30px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .faq-answer p {
+            padding-bottom: 25px;
+            color: var(--text-light);
+        }
+        
+        .faq-item.active .faq-question {
+            background-color: var(--light-bg);
+        }
+        
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+        
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+        
+        /* Map Section */
+        .map-section {
+            padding: 0 0 80px;
+        }
+        
+        .map-container {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 51, 102, 0.15);
+            height: 400px;
+        }
+        
+        .map-container iframe {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-        }
-        
-        .author-info h4 {
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-        
-        .author-info p {
-            color: var(--primary-medium);
-            font-size: 0.9rem;
-        }
-        
-        .testimonial-controls {
-            display: flex;
-            justify-content: center;
-            margin-top: 40px;
-        }
-        
-        .testimonial-dots {
-            display: flex;
-        }
-        
-        .dot {
-            width: 12px;
-            height: 12px;
-            background-color: #ccc;
-            border-radius: 50%;
-            margin: 0 8px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .dot.active {
-            background-color: var(--primary-medium);
+            border: none;
         }
         
         /* Footer */
@@ -478,25 +503,17 @@
         
         /* Responsive Styles */
         @media (max-width: 992px) {
-            .hero-content {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .hero-text {
-                margin-bottom: 50px;
-            }
-            
-            .hero-text h2 {
-                font-size: 2.5rem;
-            }
-            
-            .about-content {
-                flex-direction: column;
+            .contact-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
             }
             
             .footer-content {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .contact-hero h1 {
+                font-size: 2.5rem;
             }
         }
         
@@ -533,16 +550,16 @@
                 display: block;
             }
             
-            .hero {
-                padding: 120px 0 80px;
+            .contact-hero {
+                padding: 120px 0 40px;
             }
             
-            .hero-text h2 {
+            .contact-hero h1 {
                 font-size: 2rem;
             }
             
-            .about-features {
-                grid-template-columns: 1fr;
+            .contact-form-container, .info-card {
+                padding: 25px;
             }
             
             .section-title h2 {
@@ -555,12 +572,20 @@
                 grid-template-columns: 1fr;
             }
             
-            .testimonial-item {
-                padding: 30px 20px;
+            .contact-hero h1 {
+                font-size: 1.8rem;
             }
             
-            .hero-text h2 {
-                font-size: 1.8rem;
+            .contact-hero p {
+                font-size: 1rem;
+            }
+            
+            .info-item {
+                flex-direction: column;
+            }
+            
+            .info-icon {
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -587,154 +612,205 @@
                 <ul>
                     <li><a href="index.php">Home</a></li>
                     <li><a href="about.php">About Us</a></li>
-                    <li><a href="contact.php">Contact</a></li>
+                    <li><a href="contact.php" class="active">Contact</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
+    <!-- Contact Hero -->
+    <section class="contact-hero">
         <div class="container">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h2>Shaping Future Leaders Through Quality Education</h2>
-                    <p>At T&T School, we provide a nurturing environment that fosters intellectual curiosity, creativity, and character development for students of all ages.</p>
-                    <a href="#admissions" class="btn">Enroll Now</a>
-                </div>
-                <div class="hero-image">
-                    <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="T&T School Students">
-                </div>
-            </div>
+            <h1>Get In Touch With Us</h1>
+            <p>We're here to answer your questions and help you with any inquiries about admissions, programs, or school activities.</p>
         </div>
     </section>
 
-    <!-- About Us Section -->
-    <section class="about" id="about">
+    <!-- Contact Section -->
+    <section class="contact-section">
         <div class="container">
             <div class="section-title">
-                <h2>About Our School</h2>
+                <h2>Contact Information</h2>
             </div>
             
-            <div class="about-content">
-                <div class="about-text">
-                    <h3>Our Mission & Vision</h3>
-                    <p>Founded in 1995, T&T School has been at the forefront of educational excellence for over 25 years. We believe in holistic development that balances academic rigor with creative expression and physical well-being.</p>
-                    <p>Our experienced faculty and state-of-the-art facilities provide an environment where students can explore their potential and develop into well-rounded individuals ready to face the challenges of the future.</p>
+            <div class="contact-content">
+                <!-- Contact Form -->
+                <div class="contact-form-container">
+                    <h3>Send Us a Message</h3>
+                    <form id="contactForm">
+                        <div class="form-group">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject">Subject *</label>
+                            <select id="subject" class="form-control" required>
+                                <option value="">Select a subject</option>
+                                <option value="admissions">Admissions Inquiry</option>
+                                <option value="academics">Academic Programs</option>
+                                <option value="tuition">Tuition and Fees</option>
+                                <option value="tours">School Tours</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="message">Your Message *</label>
+                            <textarea id="message" class="form-control" required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn">Send Message</button>
+                    </form>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="contact-info">
+                    <div class="info-card">
+                        <h3>Contact Details</h3>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-text">
+                                <h4>Our Address</h4>
+                                <p>123 Education Avenue<br>Knowledge City, KC 10101</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="info-text">
+                                <h4>Phone Number</h4>
+                                <p>+1 (555) 123-4567</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="info-text">
+                                <h4>Email Address</h4>
+                                <p>info@ttschool.edu</p>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="about-features">
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-award"></i>
-                            </div>
-                            <div>
-                                <h4>Academic Excellence</h4>
-                                <p>Consistently ranked among top schools in the region</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div>
-                                <h4>Expert Faculty</h4>
-                                <p>Highly qualified and dedicated teaching staff</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-flask"></i>
-                            </div>
-                            <div>
-                                <h4>Modern Facilities</h4>
-                                <p>Well-equipped labs, libraries, and sports facilities</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <div class="feature-icon">
-                                <i class="fas fa-heart"></i>
-                            </div>
-                            <div>
-                                <h4>Inclusive Community</h4>
-                                <p>Welcoming environment for students from all backgrounds</p>
-                            </div>
-                        </div>
+                    <div class="info-card">
+                        <h3>Office Hours</h3>
+                        <ul class="hours-list">
+                            <li><span>Monday - Friday</span><span>8:00 AM - 5:00 PM</span></li>
+                            <li><span>Saturday</span><span>9:00 AM - 2:00 PM</span></li>
+                            <li><span>Sunday</span><span>Closed</span></li>
+                            <li><span>Holidays</span><span>Closed</span></li>
+                        </ul>
                     </div>
-                </div>
-                
-                <div class="about-image">
-                    <img src="https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="T&T School Campus">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Testimonials Section -->
-    <section class="testimonials" id="testimonials">
+    <!-- FAQ Section -->
+    <section class="faq-section">
         <div class="container">
             <div class="section-title">
-                <h2>What Parents & Students Say</h2>
+                <h2>Frequently Asked Questions</h2>
             </div>
             
-            <div class="testimonial-slider">
-                <div class="testimonial-item active">
-                    <div class="testimonial-content">
-                        <p>T&T School has provided an exceptional educational experience for my daughter. The teachers are dedicated, the curriculum is challenging yet engaging, and the school community is wonderfully supportive. I've seen remarkable growth in her confidence and academic abilities.</p>
+            <div class="faq-container">
+                <div class="faq-item active">
+                    <div class="faq-question">
+                        <h3>What is the admission process at T&T School?</h3>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">
-                            <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Sarah Johnson">
-                        </div>
-                        <div class="author-info">
-                            <h4>Sarah Johnson</h4>
-                            <p>Parent of Grade 8 Student</p>
-                        </div>
+                    <div class="faq-answer">
+                        <p>Our admission process includes submitting an application form, student transcripts, recommendation letters, and an entrance assessment. After reviewing the documents, we schedule an interview with the student and parents. Admissions are granted on a rolling basis, but we recommend applying at least 6 months before the desired start date.</p>
                     </div>
                 </div>
                 
-                <div class="testimonial-item">
-                    <div class="testimonial-content">
-                        <p>As a student at T&T School for the past 6 years, I can confidently say this institution has shaped me into who I am today. The opportunities for extracurricular activities alongside academic pursuits have helped me discover my passion for robotics and engineering.</p>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What are the tuition fees and payment options?</h3>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">
-                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Chen">
-                        </div>
-                        <div class="author-info">
-                            <h4>Michael Chen</h4>
-                            <p>Grade 11 Student</p>
-                        </div>
+                    <div class="faq-answer">
+                        <p>Tuition fees vary by grade level and program. We offer several payment options including annual, semi-annual, and monthly payment plans. Financial aid and scholarships are available for qualifying students. Please contact our admissions office for specific fee structures and financial assistance options.</p>
                     </div>
                 </div>
                 
-                <div class="testimonial-item">
-                    <div class="testimonial-content">
-                        <p>The transition to T&T School was seamless for our family. The staff went above and beyond to ensure our son felt welcome and supported. His academic performance has improved significantly, and he's more excited about learning than ever before.</p>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Do you offer transportation services?</h3>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">
-                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Priya Patel">
-                        </div>
-                        <div class="author-info">
-                            <h4>Priya Patel</h4>
-                            <p>Parent of Grade 5 Student</p>
-                        </div>
+                    <div class="faq-answer">
+                        <p>Yes, we provide safe and reliable transportation services covering most areas of the city. Our buses are equipped with GPS tracking, seat belts, and are operated by trained drivers and monitors. Transportation fees are separate from tuition and are based on distance and route.</p>
                     </div>
                 </div>
                 
-                <div class="testimonial-controls">
-                    <div class="testimonial-dots">
-                        <span class="dot active" data-slide="0"></span>
-                        <span class="dot" data-slide="1"></span>
-                        <span class="dot" data-slide="2"></span>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What extracurricular activities are available?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We offer a wide range of extracurricular activities including sports teams, music programs, drama club, robotics, debate team, art classes, and various academic clubs. Activities vary by season and grade level. We believe in holistic development and encourage all students to participate in at least one extracurricular activity.</p>
                     </div>
                 </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>How do you support students with special needs?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Our school has a dedicated Learning Support Department with trained special education teachers. We provide individualized education plans (IEPs), accommodations, and support services for students with learning differences. We work closely with parents and specialists to ensure every student receives the support they need to succeed.</p>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>What safety measures are in place at the school?</h3>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Student safety is our top priority. Our campus features secure entry points with visitor management systems, CCTV surveillance, and trained security personnel. We conduct regular safety drills and have comprehensive emergency response protocols. All staff members undergo background checks and safety training.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="map-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Find Our Campus</h2>
+            </div>
+            
+            <div class="map-container">
+                <!-- Replace with your actual Google Maps embed code -->
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.177858804427!2d-73.98784468459418!3d40.70555167933207!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a315cdf4c9b%3A0x8b934de5cae6f7a!2sEducation%20Ave%2C%20New%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2s!4v1629990000000!5m2!1sen!2s" allowfullscreen="" loading="lazy"></iframe>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer id="contact">
+    <footer>
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
@@ -750,12 +826,12 @@
                 
                 <div class="footer-column">
                     <h3>Quick Links</h3>
-                    <a href="#home">Home</a>
-                    <a href="#about">About Us</a>
-                    <a href="#academics">Academics</a>
+                    <a href="index.html">Home</a>
+                    <a href="about.html">About Us</a>
+                    <a href="contact.html">Contact</a>
                     <a href="#admissions">Admissions</a>
-                    <a href="#testimonials">Testimonials</a>
-                    <a href="#contact">Contact</a>
+                    <a href="#academics">Academics</a>
+                    <a href="#programs">Programs</a>
                 </div>
                 
                 <div class="footer-column">
@@ -810,53 +886,49 @@
             });
         });
         
-        // Testimonial Slider
-        const dots = document.querySelectorAll('.dot');
-        const testimonials = document.querySelectorAll('.testimonial-item');
+        // FAQ Accordion
+        const faqItems = document.querySelectorAll('.faq-item');
         
-        // Function to show a specific testimonial
-        function showTestimonial(index) {
-            // Hide all testimonials
-            testimonials.forEach(testimonial => {
-                testimonial.style.display = 'none';
-            });
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
             
-            // Remove active class from all dots
-            dots.forEach(dot => {
-                dot.classList.remove('active');
-            });
-            
-            // Show selected testimonial and activate its dot
-            testimonials[index].style.display = 'block';
-            dots[index].classList.add('active');
-        }
-        
-        // Add click event to dots
-        dots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
-                showTestimonial(index);
+            question.addEventListener('click', () => {
+                // Close all other FAQ items
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.classList.remove('active');
+                    }
+                });
+                
+                // Toggle current item
+                item.classList.toggle('active');
             });
         });
         
-        // Auto-rotate testimonials every 5 seconds
-        let currentTestimonial = 0;
-        function autoRotateTestimonials() {
-            currentTestimonial = (currentTestimonial + 1) % testimonials.length;
-            showTestimonial(currentTestimonial);
-        }
+        // Contact Form Submission
+        const contactForm = document.getElementById('contactForm');
         
-        // Start auto rotation
-        let testimonialInterval = setInterval(autoRotateTestimonials, 5000);
-        
-        // Pause auto rotation when user interacts with dots
-        dots.forEach(dot => {
-            dot.addEventListener('mouseenter', () => {
-                clearInterval(testimonialInterval);
-            });
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            dot.addEventListener('mouseleave', () => {
-                testimonialInterval = setInterval(autoRotateTestimonials, 5000);
-            });
+            // Get form values
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            // Basic validation
+            if (!name || !email || !subject || !message) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // In a real application, you would send this data to a server
+            // For now, we'll just show a success message
+            alert('Thank you for your message, ' + name + '! We will get back to you soon at ' + email + '.');
+            
+            // Reset form
+            contactForm.reset();
         });
         
         // Smooth scrolling for anchor links
