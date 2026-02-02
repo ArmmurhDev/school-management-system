@@ -249,22 +249,22 @@
             padding: 30px;
         }
         
-        /* Welcome Banner */
-        .welcome-banner {
+        /* Welcome Section */
+        .welcome-section {
             background: linear-gradient(135deg, var(--primary-dark), var(--primary-medium));
-            border-radius: 12px;
+            border-radius: 15px;
             padding: 30px;
             color: var(--white);
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 5px 15px rgba(0, 51, 102, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.2);
         }
         
         .welcome-text h2 {
-            color: var(--white);
             font-size: 1.8rem;
+            color: var(--white);
             margin-bottom: 10px;
         }
         
@@ -273,15 +273,28 @@
             max-width: 600px;
         }
         
-        .welcome-icon {
-            font-size: 3.5rem;
-            opacity: 0.8;
+        .welcome-date {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .welcome-date .day {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .welcome-date .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
         
         /* Stats Cards */
         .stats-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
         }
@@ -302,11 +315,11 @@
             box-shadow: 0 10px 20px rgba(0, 51, 102, 0.15);
         }
         
-        .stat-card.classes {
+        .stat-card.students {
             border-left-color: var(--accent-blue);
         }
         
-        .stat-card.students {
+        .stat-card.classes {
             border-left-color: var(--success);
         }
         
@@ -314,8 +327,8 @@
             border-left-color: var(--warning);
         }
         
-        .stat-card.attendance {
-            border-left-color: var(--danger);
+        .stat-card.announcements {
+            border-left-color: var(--info);
         }
         
         .stat-icon {
@@ -329,12 +342,12 @@
             font-size: 1.8rem;
         }
         
-        .stat-card.classes .stat-icon {
+        .stat-card.students .stat-icon {
             background-color: rgba(30, 136, 229, 0.1);
             color: var(--accent-blue);
         }
         
-        .stat-card.students .stat-icon {
+        .stat-card.classes .stat-icon {
             background-color: rgba(40, 167, 69, 0.1);
             color: var(--success);
         }
@@ -344,9 +357,9 @@
             color: var(--warning);
         }
         
-        .stat-card.attendance .stat-icon {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
+        .stat-card.announcements .stat-icon {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
         }
         
         .stat-info h3 {
@@ -377,7 +390,7 @@
         .schedule-card {
             background-color: var(--white);
             border-radius: 12px;
-            padding: 25px;
+            padding: 30px;
             box-shadow: 0 5px 15px var(--shadow);
         }
         
@@ -411,36 +424,32 @@
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 15px;
-            background-color: var(--light-bg);
-            border-left: 4px solid var(--primary-medium);
+            border-left: 4px solid var(--primary-light);
+            background-color: #f9f9f9;
             transition: all 0.3s;
         }
         
         .schedule-item:hover {
-            background-color: #e8f4ff;
+            background-color: var(--light-bg);
             transform: translateX(5px);
         }
         
-        .schedule-item.current {
-            background-color: #fff8e1;
-            border-left-color: var(--warning);
+        .schedule-item.active {
+            border-left-color: var(--accent-blue);
+            background-color: rgba(30, 136, 229, 0.05);
         }
         
-        .schedule-item.upcoming {
+        .schedule-item.completed {
             border-left-color: var(--success);
-        }
-        
-        .schedule-item.past {
             opacity: 0.8;
-            border-left-color: #ccc;
         }
         
         .schedule-time {
+            font-weight: 600;
+            color: var(--primary-medium);
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
-            color: var(--primary-medium);
-            font-weight: 600;
         }
         
         .schedule-time i {
@@ -448,33 +457,33 @@
         }
         
         .schedule-details h4 {
-            font-size: 1.1rem;
-            margin-bottom: 8px;
+            font-size: 1rem;
+            margin-bottom: 5px;
         }
         
         .schedule-details p {
             color: var(--text-light);
             font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-        }
-        
-        .schedule-details p i {
-            margin-right: 8px;
         }
         
         /* Quick Actions */
         .actions-card {
             background-color: var(--white);
             border-radius: 12px;
-            padding: 25px;
+            padding: 30px;
             box-shadow: 0 5px 15px var(--shadow);
         }
         
         .actions-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         .action-item {
@@ -484,14 +493,13 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            border: 1px solid transparent;
+            border: 1px solid rgba(77, 143, 204, 0.2);
         }
         
         .action-item:hover {
-            background-color: #e8f4ff;
+            background-color: #e3f2fd;
             transform: translateY(-5px);
-            border-color: var(--primary-light);
-            box-shadow: 0 5px 10px rgba(0, 51, 102, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 51, 102, 0.1);
         }
         
         .action-icon {
@@ -503,18 +511,12 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
-            font-size: 1.5rem;
             color: var(--primary-medium);
-            box-shadow: 0 3px 10px rgba(0, 51, 102, 0.1);
-        }
-        
-        .action-item:hover .action-icon {
-            background-color: var(--primary-medium);
-            color: var(--white);
+            font-size: 1.3rem;
         }
         
         .action-item h4 {
-            font-size: 0.95rem;
+            font-size: 1rem;
             margin-bottom: 5px;
         }
         
@@ -523,83 +525,174 @@
             font-size: 0.85rem;
         }
         
-        /* Pending Tasks */
-        .tasks-card {
+        /* Recent Students */
+        .recent-students-card {
             background-color: var(--white);
             border-radius: 12px;
-            padding: 25px;
+            padding: 30px;
             box-shadow: 0 5px 15px var(--shadow);
             margin-bottom: 40px;
         }
         
-        .tasks-list {
-            list-style: none;
+        .table-responsive {
+            overflow-x: auto;
         }
         
-        .task-item {
-            padding: 18px;
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .students-table thead {
+            background-color: var(--light-bg);
+        }
+        
+        .students-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary-dark);
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+        
+        .students-table td {
+            padding: 15px;
             border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+        
+        .students-table tbody tr {
+            transition: all 0.3s;
+        }
+        
+        .students-table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .student-info {
             display: flex;
             align-items: center;
         }
         
-        .task-item:last-child {
-            border-bottom: none;
-        }
-        
-        .task-checkbox {
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
             margin-right: 15px;
         }
         
-        .task-checkbox input {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+        .student-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
-        .task-details {
-            flex: 1;
-        }
-        
-        .task-details h4 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        
-        .task-details p {
-            color: var(--text-light);
-            font-size: 0.85rem;
-        }
-        
-        .task-priority {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
+        .student-name {
             font-weight: 500;
-            margin-left: 15px;
+            margin-bottom: 3px;
         }
         
-        .priority-high {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
+        .student-id {
+            font-size: 0.85rem;
+            color: var(--text-light);
         }
         
-        .priority-medium {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
+        .grade-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
         
-        .priority-low {
+        .grade-a {
             background-color: rgba(40, 167, 69, 0.1);
             color: var(--success);
         }
         
-        /* Recent Announcements */
+        .grade-b {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+        }
+        
+        .grade-c {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning);
+        }
+        
+        /* Upcoming Events */
+        .events-card {
+            background-color: var(--white);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+        
+        .events-list {
+            list-style: none;
+        }
+        
+        .event-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .event-item:last-child {
+            border-bottom: none;
+        }
+        
+        .event-date {
+            min-width: 60px;
+            text-align: center;
+            margin-right: 20px;
+        }
+        
+        .event-day {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-medium);
+            line-height: 1;
+        }
+        
+        .event-month {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+        
+        .event-details h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+        
+        .event-details p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .event-time {
+            display: flex;
+            align-items: center;
+            color: var(--primary-medium);
+            font-size: 0.85rem;
+        }
+        
+        .event-time i {
+            margin-right: 8px;
+        }
+        
+        /* Announcements */
         .announcements-card {
             background-color: var(--white);
             border-radius: 12px;
-            padding: 25px;
+            padding: 30px;
             box-shadow: 0 5px 15px var(--shadow);
+            margin-bottom: 40px;
         }
         
         .announcements-list {
@@ -614,6 +707,16 @@
             border-left: 4px solid var(--primary-light);
         }
         
+        .announcement-item.important {
+            border-left-color: var(--warning);
+            background-color: rgba(255, 193, 7, 0.05);
+        }
+        
+        .announcement-item.urgent {
+            border-left-color: var(--danger);
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+        
         .announcement-header {
             display: flex;
             justify-content: space-between;
@@ -623,74 +726,61 @@
         
         .announcement-title {
             font-weight: 600;
-            font-size: 1rem;
             color: var(--primary-dark);
         }
         
-        .announcement-date {
-            color: var(--text-light);
+        .announcement-time {
             font-size: 0.85rem;
+            color: var(--text-light);
         }
         
         .announcement-content {
             color: var(--text-light);
-            font-size: 0.9rem;
-            line-height: 1.5;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
         
-        /* Upcoming Events */
-        .events-card {
+        .announcement-sender {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--primary-medium);
+        }
+        
+        .announcement-sender i {
+            margin-right: 8px;
+        }
+        
+        /* Performance Chart */
+        .performance-card {
             background-color: var(--white);
             border-radius: 12px;
-            padding: 25px;
+            padding: 30px;
             box-shadow: 0 5px 15px var(--shadow);
         }
         
-        .events-list {
-            list-style: none;
+        .chart-container {
+            height: 300px;
+            position: relative;
+            margin-top: 20px;
         }
         
-        .event-item {
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
+        .chart-placeholder {
+            height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
-        }
-        
-        .event-item:last-child {
-            border-bottom: none;
-        }
-        
-        .event-date {
-            background-color: var(--light-bg);
+            justify-content: center;
+            background-color: #f9f9f9;
             border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            min-width: 70px;
-            margin-right: 15px;
+            color: #888;
         }
         
-        .event-day {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-medium);
-            line-height: 1;
-        }
-        
-        .event-month {
-            font-size: 0.8rem;
-            color: var(--text-light);
-            text-transform: uppercase;
-        }
-        
-        .event-details h4 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        
-        .event-details p {
-            color: var(--text-light);
-            font-size: 0.85rem;
+        .chart-placeholder i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--primary-light);
         }
         
         /* Footer */
@@ -705,8 +795,8 @@
         
         /* Responsive Styles */
         @media (max-width: 1200px) {
-            .stats-cards {
-                grid-template-columns: repeat(2, 1fr);
+            .dashboard-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -743,27 +833,22 @@
                 display: block;
             }
             
-            .actions-grid {
-                grid-template-columns: 1fr;
+            .welcome-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .welcome-date {
+                align-self: stretch;
+                text-align: left;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             }
         }
         
         @media (max-width: 768px) {
-            .welcome-banner {
-                flex-direction: column;
-                text-align: center;
-                padding: 25px;
-            }
-            
-            .welcome-icon {
-                margin-top: 20px;
-                font-size: 3rem;
-            }
-            
-            .stats-cards {
-                grid-template-columns: 1fr;
-            }
-            
             .top-header {
                 padding: 20px;
             }
@@ -772,28 +857,40 @@
                 padding: 20px;
             }
             
-            .header-action {
-                margin-left: 15px;
+            .stats-cards {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            }
+            
+            .welcome-text h2 {
+                font-size: 1.5rem;
+            }
+            
+            .students-table th,
+            .students-table td {
+                padding: 10px 5px;
+                font-size: 0.85rem;
             }
         }
         
         @media (max-width: 576px) {
-            .welcome-text h2 {
-                font-size: 1.5rem;
+            .stats-cards {
+                grid-template-columns: 1fr;
             }
             
             .stat-card {
                 padding: 20px;
             }
             
-            .card-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
+            .welcome-section {
+                padding: 20px;
             }
             
-            .page-title h1 {
-                font-size: 1.5rem;
+            .event-item {
+                flex-direction: column;
+            }
+            
+            .event-date {
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -813,59 +910,49 @@
             </div>
             
             <div class="sidebar-menu">
-                <a href="#" class="menu-item active">
+                <a href="staff-dashboard.html" class="menu-item active">
                     <i class="fas fa-tachometer-alt"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>
                 
-                <a href="#" class="menu-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="menu-text">My Schedule</span>
-                </a>
-                
-                <a href="#" class="menu-item">
+                <a href="my-classes.html" class="menu-item">
                     <i class="fas fa-chalkboard-teacher"></i>
                     <span class="menu-text">My Classes</span>
                 </a>
                 
-                <a href="#" class="menu-item">
+                <a href="my-students.html" class="menu-item">
                     <i class="fas fa-users"></i>
                     <span class="menu-text">My Students</span>
                 </a>
                 
-                <a href="#" class="menu-item">
-                    <i class="fas fa-clipboard-check"></i>
+                <a href="attendance.html" class="menu-item">
+                    <i class="fas fa-calendar-check"></i>
                     <span class="menu-text">Attendance</span>
                 </a>
                 
-                <a href="#" class="menu-item">
+                <a href="grades.html" class="menu-item">
                     <i class="fas fa-chart-bar"></i>
-                    <span class="menu-text">Results & Grades</span>
+                    <span class="menu-text">Grades & Results</span>
                 </a>
                 
-                <a href="#" class="menu-item">
-                    <i class="fas fa-tasks"></i>
-                    <span class="menu-text">Assignments</span>
+                <a href="timetable.html" class="menu-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="menu-text">Timetable</span>
                 </a>
                 
-                <a href="#" class="menu-item">
+                <a href="messages.html" class="menu-item">
                     <i class="fas fa-envelope"></i>
                     <span class="menu-text">Messages</span>
-                </a>
-                
-                <a href="#" class="menu-item">
-                    <i class="fas fa-cog"></i>
-                    <span class="menu-text">Settings</span>
                 </a>
             </div>
             
             <div class="sidebar-footer">
                 <div class="user-info">
                     <div class="user-avatar">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Staff">
+                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Teacher">
                     </div>
                     <div class="user-details">
-                        <h4>Mr. Robert Smith</h4>
+                        <h4>Mr. David Chen</h4>
                         <p>Mathematics Teacher</p>
                     </div>
                 </div>
@@ -911,29 +998,21 @@
             
             <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <!-- Welcome Banner -->
-                <div class="welcome-banner">
+                <!-- Welcome Section -->
+                <div class="welcome-section">
                     <div class="welcome-text">
-                        <h2>Welcome back, Mr. Robert Smith!</h2>
-                        <p>You have 3 classes today. Next class: Mathematics for Grade 10 at 10:00 AM in Room 302.</p>
+                        <h2>Welcome back, Mr. David Chen!</h2>
+                        <p>Here's what's happening with your classes today. You have 3 classes scheduled and 2 pending tasks to complete.</p>
                     </div>
-                    <div class="welcome-icon">
-                        <i class="fas fa-chalkboard-teacher"></i>
+                    
+                    <div class="welcome-date">
+                        <div class="day">Tuesday</div>
+                        <div class="date">October 17, 2023</div>
                     </div>
                 </div>
                 
                 <!-- Stats Cards -->
                 <div class="stats-cards">
-                    <div class="stat-card classes">
-                        <div class="stat-icon">
-                            <i class="fas fa-chalkboard"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>5</h3>
-                            <p>Active Classes</p>
-                        </div>
-                    </div>
-                    
                     <div class="stat-card students">
                         <div class="stat-icon">
                             <i class="fas fa-users"></i>
@@ -941,6 +1020,16 @@
                         <div class="stat-info">
                             <h3>142</h3>
                             <p>Total Students</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card classes">
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>6</h3>
+                            <p>Active Classes</p>
                         </div>
                     </div>
                     
@@ -954,13 +1043,13 @@
                         </div>
                     </div>
                     
-                    <div class="stat-card attendance">
+                    <div class="stat-card announcements">
                         <div class="stat-icon">
-                            <i class="fas fa-clipboard-check"></i>
+                            <i class="fas fa-bullhorn"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>94%</h3>
-                            <p>Class Attendance</p>
+                            <h3>5</h3>
+                            <p>New Announcements</p>
                         </div>
                     </div>
                 </div>
@@ -973,106 +1062,163 @@
                         <div class="schedule-card">
                             <div class="card-header">
                                 <h3>Today's Schedule</h3>
-                                <a href="#" class="view-all">View Full Schedule</a>
+                                <a href="timetable.html" class="view-all">View Full Timetable</a>
                             </div>
+                            
                             <ul class="schedule-list">
-                                <li class="schedule-item current">
+                                <li class="schedule-item active">
                                     <div class="schedule-time">
-                                        <i class="fas fa-clock"></i>
-                                        09:00 AM - 10:00 AM
+                                        <i class="far fa-clock"></i> 8:00 AM - 9:30 AM
                                     </div>
                                     <div class="schedule-details">
-                                        <h4>Mathematics - Grade 9</h4>
-                                        <p><i class="fas fa-door-open"></i> Room 301 | <i class="fas fa-user-friends"></i> 32 Students</p>
-                                    </div>
-                                </li>
-                                
-                                <li class="schedule-item upcoming">
-                                    <div class="schedule-time">
-                                        <i class="fas fa-clock"></i>
-                                        10:15 AM - 11:15 AM
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>Advanced Mathematics - Grade 10</h4>
-                                        <p><i class="fas fa-door-open"></i> Room 302 | <i class="fas fa-user-friends"></i> 28 Students</p>
+                                        <h4>Mathematics - Grade 10A</h4>
+                                        <p>Room 205 | Topic: Calculus Fundamentals</p>
                                     </div>
                                 </li>
                                 
                                 <li class="schedule-item">
                                     <div class="schedule-time">
-                                        <i class="fas fa-clock"></i>
-                                        01:00 PM - 02:00 PM
+                                        <i class="far fa-clock"></i> 10:00 AM - 11:30 AM
                                     </div>
                                     <div class="schedule-details">
-                                        <h4>Mathematics - Grade 11</h4>
-                                        <p><i class="fas fa-door-open"></i> Room 305 | <i class="fas fa-user-friends"></i> 30 Students</p>
+                                        <h4>Mathematics - Grade 9B</h4>
+                                        <p>Room 210 | Topic: Algebraic Equations</p>
                                     </div>
                                 </li>
                                 
                                 <li class="schedule-item">
                                     <div class="schedule-time">
-                                        <i class="fas fa-clock"></i>
-                                        02:15 PM - 03:15 PM
+                                        <i class="far fa-clock"></i> 1:00 PM - 2:30 PM
                                     </div>
                                     <div class="schedule-details">
-                                        <h4>Faculty Meeting</h4>
-                                        <p><i class="fas fa-door-open"></i> Conference Room | <i class="fas fa-user-friends"></i> All Math Faculty</p>
+                                        <h4>Advanced Mathematics - Grade 11</h4>
+                                        <p>Room 305 | Topic: Trigonometry Applications</p>
+                                    </div>
+                                </li>
+                                
+                                <li class="schedule-item completed">
+                                    <div class="schedule-time">
+                                        <i class="far fa-clock"></i> 3:00 PM - 4:30 PM
+                                    </div>
+                                    <div class="schedule-details">
+                                        <h4>Mathematics Club Meeting</h4>
+                                        <p>Library | Preparing for Math Olympiad</p>
                                     </div>
                                 </li>
                             </ul>
                         </div>
                         
-                        <!-- Pending Tasks -->
-                        <div class="tasks-card">
+                        <!-- Recent Students -->
+                        <div class="recent-students-card">
                             <div class="card-header">
-                                <h3>Pending Tasks</h3>
-                                <a href="#" class="view-all">View All Tasks</a>
+                                <h3>Recent Student Performance</h3>
+                                <a href="my-students.html" class="view-all">View All Students</a>
                             </div>
-                            <ul class="tasks-list">
-                                <li class="task-item">
-                                    <div class="task-checkbox">
-                                        <input type="checkbox" id="task1">
-                                    </div>
-                                    <div class="task-details">
-                                        <h4>Grade Term 1 Assignments</h4>
-                                        <p>Mathematics - Grade 10 | Due: Today</p>
-                                    </div>
-                                    <div class="task-priority priority-high">High</div>
-                                </li>
-                                
-                                <li class="task-item">
-                                    <div class="task-checkbox">
-                                        <input type="checkbox" id="task2">
-                                    </div>
-                                    <div class="task-details">
-                                        <h4>Prepare Midterm Exam Paper</h4>
-                                        <p>Grade 9 Mathematics | Due: Oct 30</p>
-                                    </div>
-                                    <div class="task-priority priority-medium">Medium</div>
-                                </li>
-                                
-                                <li class="task-item">
-                                    <div class="task-checkbox">
-                                        <input type="checkbox" id="task3">
-                                    </div>
-                                    <div class="task-details">
-                                        <h4>Update Student Progress Reports</h4>
-                                        <p>All Classes | Due: Nov 5</p>
-                                    </div>
-                                    <div class="task-priority priority-low">Low</div>
-                                </li>
-                                
-                                <li class="task-item">
-                                    <div class="task-checkbox">
-                                        <input type="checkbox" id="task4">
-                                    </div>
-                                    <div class="task-details">
-                                        <h4>Submit Lesson Plans for November</h4>
-                                        <p>Department Head | Due: Oct 28</p>
-                                    </div>
-                                    <div class="task-priority priority-medium">Medium</div>
-                                </li>
-                            </ul>
+                            
+                            <div class="table-responsive">
+                                <table class="students-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Student</th>
+                                            <th>Class</th>
+                                            <th>Recent Test</th>
+                                            <th>Grade</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="student-info">
+                                                    <div class="student-avatar">
+                                                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Student">
+                                                    </div>
+                                                    <div>
+                                                        <div class="student-name">Michael Johnson</div>
+                                                        <div class="student-id">ID: STU-2023-045</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Grade 10A</td>
+                                            <td>Calculus Test</td>
+                                            <td><span class="grade-badge grade-a">92%</span></td>
+                                            <td>Excellent</td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="student-info">
+                                                    <div class="student-avatar">
+                                                        <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Student">
+                                                    </div>
+                                                    <div>
+                                                        <div class="student-name">Sarah Williams</div>
+                                                        <div class="student-id">ID: STU-2023-046</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Grade 9B</td>
+                                            <td>Algebra Test</td>
+                                            <td><span class="grade-badge grade-b">85%</span></td>
+                                            <td>Good</td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="student-info">
+                                                    <div class="student-avatar">
+                                                        <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Student">
+                                                    </div>
+                                                    <div>
+                                                        <div class="student-name">James Wilson</div>
+                                                        <div class="student-id">ID: STU-2023-047</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Grade 11</td>
+                                            <td>Trigonometry Test</td>
+                                            <td><span class="grade-badge grade-c">72%</span></td>
+                                            <td>Needs Improvement</td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="student-info">
+                                                    <div class="student-avatar">
+                                                        <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Student">
+                                                    </div>
+                                                    <div>
+                                                        <div class="student-name">Emily Davis</div>
+                                                        <div class="student-id">ID: STU-2023-048</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Grade 10A</td>
+                                            <td>Calculus Test</td>
+                                            <td><span class="grade-badge grade-a">95%</span></td>
+                                            <td>Excellent</td>
+                                        </tr>
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="student-info">
+                                                    <div class="student-avatar">
+                                                        <img src="https://randomuser.me/api/portraits/men/55.jpg" alt="Student">
+                                                    </div>
+                                                    <div>
+                                                        <div class="student-name">Robert Chen</div>
+                                                        <div class="student-id">ID: STU-2023-049</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Grade 9B</td>
+                                            <td>Algebra Test</td>
+                                            <td><span class="grade-badge grade-b">88%</span></td>
+                                            <td>Good</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     
@@ -1083,8 +1229,9 @@
                             <div class="card-header">
                                 <h3>Quick Actions</h3>
                             </div>
+                            
                             <div class="actions-grid">
-                                <div class="action-item" id="takeAttendance">
+                                <div class="action-item" data-action="attendance">
                                     <div class="action-icon">
                                         <i class="fas fa-clipboard-check"></i>
                                     </div>
@@ -1092,124 +1239,158 @@
                                     <p>Mark today's attendance</p>
                                 </div>
                                 
-                                <div class="action-item" id="uploadResults">
+                                <div class="action-item" data-action="grades">
                                     <div class="action-icon">
-                                        <i class="fas fa-file-upload"></i>
+                                        <i class="fas fa-edit"></i>
                                     </div>
-                                    <h4>Upload Results</h4>
-                                    <p>Submit exam results</p>
+                                    <h4>Enter Grades</h4>
+                                    <p>Update student scores</p>
                                 </div>
                                 
-                                <div class="action-item" id="createAssignment">
+                                <div class="action-item" data-action="lesson">
+                                    <div class="action-icon">
+                                        <i class="fas fa-book-open"></i>
+                                    </div>
+                                    <h4>Plan Lesson</h4>
+                                    <p>Create new lesson plan</p>
+                                </div>
+                                
+                                <div class="action-item" data-action="assignment">
                                     <div class="action-icon">
                                         <i class="fas fa-tasks"></i>
                                     </div>
                                     <h4>Create Assignment</h4>
-                                    <p>Assign new homework</p>
+                                    <p>Set new homework</p>
                                 </div>
                                 
-                                <div class="action-item" id="sendMessage">
+                                <div class="action-item" data-action="message">
                                     <div class="action-icon">
-                                        <i class="fas fa-envelope"></i>
+                                        <i class="fas fa-comments"></i>
                                     </div>
-                                    <h4>Send Message</h4>
-                                    <p>Contact students/parents</p>
+                                    <h4>Message Parents</h4>
+                                    <p>Send updates to parents</p>
                                 </div>
                                 
-                                <div class="action-item" id="scheduleClass">
+                                <div class="action-item" data-action="report">
                                     <div class="action-icon">
-                                        <i class="fas fa-calendar-plus"></i>
+                                        <i class="fas fa-chart-pie"></i>
                                     </div>
-                                    <h4>Schedule Class</h4>
-                                    <p>Add new class to schedule</p>
-                                </div>
-                                
-                                <div class="action-item" id="requestLeave">
-                                    <div class="action-icon">
-                                        <i class="fas fa-calendar-times"></i>
-                                    </div>
-                                    <h4>Request Leave</h4>
-                                    <p>Submit leave application</p>
+                                    <h4>Generate Report</h4>
+                                    <p>Create class performance report</p>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Recent Announcements -->
-                        <div class="announcements-card">
-                            <div class="card-header">
-                                <h3>Recent Announcements</h3>
-                                <a href="#" class="view-all">View All</a>
-                            </div>
-                            <ul class="announcements-list">
-                                <li class="announcement-item">
-                                    <div class="announcement-header">
-                                        <div class="announcement-title">Faculty Development Workshop</div>
-                                        <div class="announcement-date">Oct 20, 2023</div>
-                                    </div>
-                                    <div class="announcement-content">
-                                        All teaching staff are invited to attend the "Innovative Teaching Methods" workshop on November 5th at 2:00 PM in the auditorium.
-                                    </div>
-                                </li>
-                                
-                                <li class="announcement-item">
-                                    <div class="announcement-header">
-                                        <div class="announcement-title">Midterm Exam Schedule</div>
-                                        <div class="announcement-date">Oct 18, 2023</div>
-                                    </div>
-                                    <div class="announcement-content">
-                                        Midterm examinations will be held from November 15th to 24th. Please submit your exam papers by October 30th.
-                                    </div>
-                                </li>
-                                
-                                <li class="announcement-item">
-                                    <div class="announcement-header">
-                                        <div class="announcement-title">Parent-Teacher Meetings</div>
-                                        <div class="announcement-date">Oct 15, 2023</div>
-                                    </div>
-                                    <div class="announcement-content">
-                                        Parent-teacher meetings are scheduled for November 10th. Please prepare progress reports for your students.
-                                    </div>
-                                </li>
-                            </ul>
                         </div>
                         
                         <!-- Upcoming Events -->
                         <div class="events-card">
                             <div class="card-header">
                                 <h3>Upcoming Events</h3>
-                                <a href="#" class="view-all">View Calendar</a>
+                                <a href="events.html" class="view-all">View Calendar</a>
                             </div>
+                            
                             <ul class="events-list">
                                 <li class="event-item">
                                     <div class="event-date">
+                                        <div class="event-day">20</div>
+                                        <div class="event-month">OCT</div>
+                                    </div>
+                                    <div class="event-details">
+                                        <h4>Parent-Teacher Conference</h4>
+                                        <p>Meeting with parents to discuss student progress</p>
+                                        <div class="event-time">
+                                            <i class="far fa-clock"></i> 2:00 PM - 5:00 PM
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                                <li class="event-item">
+                                    <div class="event-date">
                                         <div class="event-day">25</div>
-                                        <div class="event-month">Oct</div>
+                                        <div class="event-month">OCT</div>
                                     </div>
                                     <div class="event-details">
-                                        <h4>Mathematics Department Meeting</h4>
-                                        <p>3:00 PM | Conference Room</p>
+                                        <h4>Math Olympiad Practice</h4>
+                                        <p>Extra practice session for competition team</p>
+                                        <div class="event-time">
+                                            <i class="far fa-clock"></i> 3:30 PM - 5:30 PM
+                                        </div>
                                     </div>
                                 </li>
                                 
                                 <li class="event-item">
                                     <div class="event-date">
-                                        <div class="event-day">30</div>
-                                        <div class="event-month">Oct</div>
+                                        <div class="event-day">28</div>
+                                        <div class="event-month">OCT</div>
                                     </div>
                                     <div class="event-details">
-                                        <h4>Deadline: Exam Papers Submission</h4>
-                                        <p>End of day | Department Head</p>
+                                        <h4>Quarterly Exam</h4>
+                                        <p>Grade 10 Mathematics quarterly examination</p>
+                                        <div class="event-time">
+                                            <i class="far fa-clock"></i> 9:00 AM - 11:00 AM
+                                        </div>
                                     </div>
                                 </li>
                                 
                                 <li class="event-item">
                                     <div class="event-date">
-                                        <div class="event-day">5</div>
-                                        <div class="event-month">Nov</div>
+                                        <div class="event-day">02</div>
+                                        <div class="event-month">NOV</div>
                                     </div>
                                     <div class="event-details">
-                                        <h4>Faculty Development Workshop</h4>
-                                        <p>2:00 PM | School Auditorium</p>
+                                        <h4>Staff Development Workshop</h4>
+                                        <p>Innovative teaching methodologies session</p>
+                                        <div class="event-time">
+                                            <i class="far fa-clock"></i> 10:00 AM - 1:00 PM
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Announcements -->
+                        <div class="announcements-card">
+                            <div class="card-header">
+                                <h3>Recent Announcements</h3>
+                                <a href="announcements.html" class="view-all">View All</a>
+                            </div>
+                            
+                            <ul class="announcements-list">
+                                <li class="announcement-item important">
+                                    <div class="announcement-header">
+                                        <div class="announcement-title">Quarterly Exam Schedule</div>
+                                        <div class="announcement-time">2 hours ago</div>
+                                    </div>
+                                    <div class="announcement-content">
+                                        The quarterly examination schedule has been published. Please check the timetable and prepare your students accordingly.
+                                    </div>
+                                    <div class="announcement-sender">
+                                        <i class="fas fa-user"></i> From: Academic Office
+                                    </div>
+                                </li>
+                                
+                                <li class="announcement-item">
+                                    <div class="announcement-header">
+                                        <div class="announcement-title">New Teaching Resources</div>
+                                        <div class="announcement-time">1 day ago</div>
+                                    </div>
+                                    <div class="announcement-content">
+                                        New digital teaching resources have been added to the staff portal. These include interactive lesson plans and assessment tools.
+                                    </div>
+                                    <div class="announcement-sender">
+                                        <i class="fas fa-user"></i> From: IT Department
+                                    </div>
+                                </li>
+                                
+                                <li class="announcement-item urgent">
+                                    <div class="announcement-header">
+                                        <div class="announcement-title">Staff Meeting - Tomorrow</div>
+                                        <div class="announcement-time">2 days ago</div>
+                                    </div>
+                                    <div class="announcement-content">
+                                        Mandatory staff meeting tomorrow at 3:00 PM in the conference room. Agenda includes curriculum updates and student performance review.
+                                    </div>
+                                    <div class="announcement-sender">
+                                        <i class="fas fa-user"></i> From: Principal's Office
                                     </div>
                                 </li>
                             </ul>
@@ -1217,9 +1398,32 @@
                     </div>
                 </div>
                 
+                <!-- Performance Chart -->
+                <div class="performance-card">
+                    <div class="card-header">
+                        <h3>Class Performance Overview</h3>
+                        <div>
+                            <select id="performancePeriod" style="padding: 8px 15px; border-radius: 6px; border: 1px solid #ddd;">
+                                <option>Last 30 Days</option>
+                                <option>Last 3 Months</option>
+                                <option selected>Current Term</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <!-- Chart placeholder (in real app, would use Chart.js) -->
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-line"></i>
+                            <p>Class Performance Chart</p>
+                            <p style="font-size: 0.9rem;">(Chart.js would be implemented here)</p>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Footer -->
                 <div class="dashboard-footer">
-                    <p>&copy; 2023 T&T School Management System. All rights reserved. | Staff Portal v2.1</p>
+                    <p>&copy; 2023 T&T School Management System. All rights reserved. | Staff Dashboard v2.0</p>
                 </div>
             </div>
         </div>
@@ -1231,217 +1435,206 @@
         const overlay = document.getElementById('overlay');
         const menuToggle = document.getElementById('menuToggle');
         const mainContent = document.getElementById('mainContent');
+        const actionItems = document.querySelectorAll('.action-item');
+        const notificationBadges = document.querySelectorAll('.notification-badge');
+        const performancePeriod = document.getElementById('performancePeriod');
         
-        // Quick action buttons
-        const takeAttendanceBtn = document.getElementById('takeAttendance');
-        const uploadResultsBtn = document.getElementById('uploadResults');
-        const createAssignmentBtn = document.getElementById('createAssignment');
-        const sendMessageBtn = document.getElementById('sendMessage');
-        const scheduleClassBtn = document.getElementById('scheduleClass');
-        const requestLeaveBtn = document.getElementById('requestLeave');
-        
-        // Task checkboxes
-        const taskCheckboxes = document.querySelectorAll('.task-checkbox input');
-        
-        // Mobile sidebar toggle
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updateWelcomeMessage();
+            simulateRealTimeUpdates();
         });
         
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
-        
-        // Close sidebar when clicking on a menu item (for mobile)
-        document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth < 992) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                }
+        // Setup event listeners
+        function setupEventListeners() {
+            // Mobile sidebar toggle
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
             });
-        });
-        
-        // Quick action button handlers
-        takeAttendanceBtn.addEventListener('click', () => {
-            alert('Take Attendance feature would open here. You would be able to mark attendance for your classes.');
-        });
-        
-        uploadResultsBtn.addEventListener('click', () => {
-            alert('Upload Results feature would open here. You can upload exam/assignment results for your students.');
-        });
-        
-        createAssignmentBtn.addEventListener('click', () => {
-            alert('Create Assignment feature would open here. You can create and assign new homework or projects.');
-        });
-        
-        sendMessageBtn.addEventListener('click', () => {
-            alert('Send Message feature would open here. You can message students, parents, or other staff members.');
-        });
-        
-        scheduleClassBtn.addEventListener('click', () => {
-            alert('Schedule Class feature would open here. You can schedule additional classes or make-up sessions.');
-        });
-        
-        requestLeaveBtn.addEventListener('click', () => {
-            alert('Request Leave feature would open here. You can submit a leave application to the administration.');
-        });
-        
-        // Task completion handlers
-        taskCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const taskItem = this.closest('.task-item');
-                const taskTitle = taskItem.querySelector('h4').textContent;
-                
-                if (this.checked) {
-                    // Mark task as completed
-                    taskItem.style.opacity = '0.6';
-                    taskItem.style.textDecoration = 'line-through';
-                    
-                    // Update task count
-                    updateTaskCount(-1);
-                    
-                    // Show completion message
-                    setTimeout(() => {
-                        alert(`Task "${taskTitle}" marked as completed!`);
-                    }, 300);
-                }
+            
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
             });
-        });
-        
-        // Update task count
-        function updateTaskCount(change) {
-            const taskCountElement = document.querySelector('.stat-card.tasks .stat-info h3');
-            let currentCount = parseInt(taskCountElement.textContent);
-            currentCount += change;
             
-            if (currentCount < 0) currentCount = 0;
+            // Quick action items
+            actionItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    handleQuickAction(action);
+                });
+            });
             
-            taskCountElement.textContent = currentCount;
+            // Notification badges click
+            notificationBadges.forEach(badge => {
+                badge.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const currentCount = parseInt(this.textContent);
+                    if (currentCount > 0) {
+                        this.textContent = currentCount - 1;
+                        
+                        if (currentCount - 1 === 0) {
+                            this.style.display = 'none';
+                        }
+                    }
+                });
+            });
+            
+            // Header action buttons
+            document.querySelectorAll('.header-action').forEach(action => {
+                action.addEventListener('click', function() {
+                    const icon = this.querySelector('i').className;
+                    
+                    if (icon.includes('fa-search')) {
+                        // Search functionality
+                        const searchQuery = prompt('Search for students, classes, or resources:');
+                        if (searchQuery) {
+                            alert(`Searching for: "${searchQuery}"`);
+                        }
+                    } else if (icon.includes('fa-bell')) {
+                        // Notifications
+                        alert('Showing notifications panel');
+                    } else if (icon.includes('fa-envelope')) {
+                        // Messages
+                        alert('Opening messages');
+                    } else if (icon.includes('fa-user-circle')) {
+                        // User profile
+                        alert('Opening user profile');
+                    }
+                });
+            });
+            
+            // Performance period change
+            if (performancePeriod) {
+                performancePeriod.addEventListener('change', function() {
+                    const period = this.value;
+                    alert(`Updating performance chart for: ${period}`);
+                });
+            }
+            
+            // View all links
+            document.querySelectorAll('.view-all').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    alert(`Navigating to: ${target}`);
+                });
+            });
+            
+            // Close sidebar when clicking on a menu item (for mobile)
+            document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    if (window.innerWidth < 992) {
+                        sidebar.classList.remove('active');
+                        overlay.classList.remove('active');
+                    }
+                });
+            });
         }
         
-        // Update current class indicator
-        function updateCurrentClass() {
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            
-            // Remove current class from all schedule items
-            document.querySelectorAll('.schedule-item').forEach(item => {
-                item.classList.remove('current');
-            });
-            
-            // Simple logic to highlight current class based on time
-            if (currentHour >= 9 && currentHour < 10) {
-                // 9:00 AM - 10:00 AM class
-                document.querySelectorAll('.schedule-item')[0].classList.add('current');
-            } else if (currentHour >= 10 && currentHour < 11) {
-                // 10:15 AM - 11:15 AM class
-                document.querySelectorAll('.schedule-item')[1].classList.add('current');
-            } else if (currentHour >= 13 && currentHour < 14) {
-                // 1:00 PM - 2:00 PM class
-                document.querySelectorAll('.schedule-item')[2].classList.add('current');
-            } else if (currentHour >= 14 && currentHour < 15) {
-                // 2:15 PM - 3:15 PM class
-                document.querySelectorAll('.schedule-item')[3].classList.add('current');
+        // Handle quick actions
+        function handleQuickAction(action) {
+            switch(action) {
+                case 'attendance':
+                    alert('Opening attendance marking interface...');
+                    break;
+                case 'grades':
+                    alert('Opening grade entry interface...');
+                    break;
+                case 'lesson':
+                    alert('Opening lesson planner...');
+                    break;
+                case 'assignment':
+                    alert('Creating new assignment...');
+                    break;
+                case 'message':
+                    alert('Opening parent messaging interface...');
+                    break;
+                case 'report':
+                    alert('Generating class performance report...');
+                    break;
+                default:
+                    alert(`Action: ${action}`);
             }
         }
         
-        // Update time-based indicators on page load
-        updateCurrentClass();
-        
-        // Update every minute
-        setInterval(updateCurrentClass, 60000);
+        // Update welcome message based on time of day
+        function updateWelcomeMessage() {
+            const hour = new Date().getHours();
+            let greeting = '';
+            
+            if (hour < 12) {
+                greeting = 'Good morning';
+            } else if (hour < 18) {
+                greeting = 'Good afternoon';
+            } else {
+                greeting = 'Good evening';
+            }
+            
+            const welcomeHeading = document.querySelector('.welcome-text h2');
+            if (welcomeHeading) {
+                welcomeHeading.textContent = `${greeting}, Mr. David Chen!`;
+            }
+        }
         
         // Simulate real-time updates
         function simulateRealTimeUpdates() {
-            // Randomly update attendance percentage
-            const attendanceElement = document.querySelector('.stat-card.attendance .stat-info h3');
-            let attendance = parseInt(attendanceElement.textContent);
-            
-            // Small random fluctuation
-            const change = Math.random() > 0.5 ? 1 : -1;
-            attendance += change;
-            
-            // Keep within reasonable bounds
-            if (attendance < 85) attendance = 85;
-            if (attendance > 98) attendance = 98;
-            
-            attendanceElement.textContent = attendance + '%';
-            
-            // Update student count (occasionally)
-            if (Math.random() > 0.8) {
-                const studentElement = document.querySelector('.stat-card.students .stat-info h3');
-                let students = parseInt(studentElement.textContent);
+            // Update stats every 30 seconds with small random variations
+            setInterval(() => {
+                const statCards = document.querySelectorAll('.stat-info h3');
                 
-                // Small change
-                students += Math.random() > 0.5 ? 1 : -1;
+                // Update student count
+                let studentCount = parseInt(statCards[0].textContent.replace(/,/g, ''));
+                studentCount += Math.floor(Math.random() * 2); // Small random increase
+                statCards[0].textContent = studentCount.toLocaleString();
                 
-                // Keep within reasonable bounds
-                if (students < 135) students = 135;
-                if (students > 148) students = 148;
+                // Update task count (more dynamic)
+                let taskCount = parseInt(statCards[2].textContent.replace(/,/g, ''));
+                taskCount += Math.floor(Math.random() * 3) - 1; // Random change between -1 and +1
+                if (taskCount < 0) taskCount = 0;
+                statCards[2].textContent = taskCount;
                 
-                studentElement.textContent = students;
-            }
-        }
-        
-        // Update stats every 30 seconds
-        setInterval(simulateRealTimeUpdates, 30000);
-        
-        // Notification click handlers
-        document.querySelectorAll('.header-action').forEach(action => {
-            action.addEventListener('click', function() {
-                if (this.querySelector('.notification-badge')) {
-                    const badge = this.querySelector('.notification-badge');
-                    const currentCount = parseInt(badge.textContent);
+                // Update announcement count
+                let announcementCount = parseInt(statCards[3].textContent.replace(/,/g, ''));
+                if (Math.random() > 0.8) announcementCount += 1; // 20% chance of new announcement
+                statCards[3].textContent = announcementCount;
+                
+            }, 30000);
+            
+            // Update schedule item status based on current time
+            setInterval(() => {
+                const scheduleItems = document.querySelectorAll('.schedule-item');
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTime = currentHour * 60 + currentMinute;
+                
+                scheduleItems.forEach(item => {
+                    const timeText = item.querySelector('.schedule-time').textContent;
+                    const timeMatch = timeText.match(/(\d+):(\d+)/);
                     
-                    if (currentCount > 0) {
-                        badge.textContent = currentCount - 1;
+                    if (timeMatch) {
+                        const hour = parseInt(timeMatch[1]);
+                        const minute = parseInt(timeMatch[2]);
+                        const scheduleTime = hour * 60 + minute;
                         
-                        if (currentCount - 1 === 0) {
-                            badge.style.display = 'none';
+                        // Remove all status classes
+                        item.classList.remove('active', 'completed');
+                        
+                        // Check if this class is currently happening (within 90 minutes of start)
+                        if (Math.abs(currentTime - scheduleTime) <= 90 && currentTime >= scheduleTime) {
+                            item.classList.add('active');
+                        } 
+                        // Mark as completed if it's in the past
+                        else if (currentTime > scheduleTime + 90) {
+                            item.classList.add('completed');
                         }
                     }
-                    
-                    // Show appropriate content based on icon
-                    const icon = this.querySelector('i').className;
-                    
-                    if (icon.includes('bell')) {
-                        alert('Showing notifications...');
-                    } else if (icon.includes('envelope')) {
-                        alert('Showing messages...');
-                    } else if (icon.includes('search')) {
-                        alert('Opening search...');
-                    } else if (icon.includes('user-circle')) {
-                        alert('Opening profile...');
-                    }
-                }
-            });
-        });
-        
-        // Welcome message update based on time of day
-        function updateWelcomeMessage() {
-            const welcomeElement = document.querySelector('.welcome-text h2');
-            const now = new Date();
-            const hour = now.getHours();
-            
-            let greeting = "Good ";
-            
-            if (hour < 12) {
-                greeting += "morning";
-            } else if (hour < 18) {
-                greeting += "afternoon";
-            } else {
-                greeting += "evening";
-            }
-            
-            welcomeElement.textContent = `${greeting}, Mr. Robert Smith!`;
+                });
+            }, 60000); // Update every minute
         }
-        
-        // Update welcome message on page load
-        updateWelcomeMessage();
         
         // Handle window resize
         window.addEventListener('resize', function() {
@@ -1451,43 +1644,40 @@
             }
         });
         
-        // Add active class to clicked menu items
-        document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Don't prevent default for anchor tags
-                if(this.getAttribute('href') === '#') {
-                    e.preventDefault();
-                }
-                
-                // Remove active class from all menu items
-                document.querySelectorAll('.sidebar-menu .menu-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-                
-                // Add active class to clicked item
-                this.classList.add('active');
-            });
-        });
-        
-        // Keyboard shortcuts for staff
+        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             // Ctrl + A for attendance
             if (e.ctrlKey && e.key === 'a') {
                 e.preventDefault();
-                takeAttendanceBtn.click();
+                handleQuickAction('attendance');
             }
             
-            // Ctrl + R for results
-            if (e.ctrlKey && e.key === 'r') {
+            // Ctrl + G for grades
+            if (e.ctrlKey && e.key === 'g') {
                 e.preventDefault();
-                uploadResultsBtn.click();
+                handleQuickAction('grades');
             }
             
-            // Ctrl + M for messages
-            if (e.ctrlKey && e.key === 'm') {
-                e.preventDefault();
-                sendMessageBtn.click();
+            // Escape to close sidebar
+            if (e.key === 'Escape' && window.innerWidth < 992) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
             }
+        });
+        
+        // Add click effect to action items
+        actionItems.forEach(item => {
+            item.addEventListener('mousedown', function() {
+                this.style.transform = 'scale(0.95)';
+            });
+            
+            item.addEventListener('mouseup', function() {
+                this.style.transform = '';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
         });
     </script>
 </body>
