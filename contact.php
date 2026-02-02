@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - T&T School</title>
+    <title>T&T School - Excellence in Education</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -123,58 +123,95 @@
             cursor: pointer;
         }
         
-        /* Page Hero */
-        .page-hero {
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-medium) 100%);
-            padding: 150px 0 80px;
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--light-bg) 0%, #E3F2FD 100%);
+            padding: 150px 0 100px;
             margin-top: 80px;
-            text-align: center;
-            color: var(--white);
             position: relative;
             overflow: hidden;
         }
         
-        .page-hero::before {
+        .hero::before {
             content: "";
             position: absolute;
             width: 300px;
             height: 300px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
+            background: linear-gradient(135deg, rgba(77, 143, 204, 0.1) 0%, rgba(30, 136, 229, 0.05) 100%);
             top: -100px;
             right: -100px;
         }
         
-        .page-hero::after {
+        .hero::after {
             content: "";
             position: absolute;
             width: 200px;
             height: 200px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.03);
+            background: linear-gradient(135deg, rgba(0, 51, 102, 0.1) 0%, rgba(0, 80, 158, 0.05) 100%);
             bottom: -80px;
             left: -80px;
         }
         
-        .page-hero h1 {
+        .hero-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-text {
+            flex: 1;
+            max-width: 600px;
+        }
+        
+        .hero-text h2 {
             font-size: 3rem;
+            line-height: 1.2;
             margin-bottom: 20px;
-            color: var(--white);
-            position: relative;
-            z-index: 1;
+            color: var(--primary-dark);
         }
         
-        .page-hero p {
+        .hero-text p {
             font-size: 1.2rem;
-            max-width: 700px;
-            margin: 0 auto;
-            opacity: 0.9;
-            position: relative;
-            z-index: 1;
+            color: var(--text-light);
+            margin-bottom: 30px;
         }
         
-        /* About Intro */
-        .about-intro {
+        .btn {
+            display: inline-block;
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
+            color: var(--white);
+            padding: 14px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 80, 158, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 80, 158, 0.3);
+        }
+        
+        .hero-image {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 15px 30px rgba(0, 51, 102, 0.15);
+        }
+        
+        /* About Section */
+        .about {
             padding: 100px 0;
             background-color: var(--white);
         }
@@ -203,265 +240,166 @@
             border-radius: 2px;
         }
         
-        .intro-content {
+        .about-content {
             display: flex;
             align-items: center;
             gap: 60px;
-            margin-bottom: 80px;
         }
         
-        .intro-text {
+        .about-text {
             flex: 1;
         }
         
-        .intro-text h3 {
+        .about-text h3 {
             font-size: 1.8rem;
             margin-bottom: 20px;
             color: var(--primary-medium);
         }
         
-        .intro-text p {
+        .about-text p {
             margin-bottom: 25px;
             color: var(--text-light);
         }
         
-        .intro-image {
+        .about-features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--light-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .feature-icon i {
+            color: var(--primary-medium);
+            font-size: 1.2rem;
+        }
+        
+        .about-image {
             flex: 1;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 15px 30px rgba(0, 51, 102, 0.1);
         }
         
-        .intro-image img {
+        .about-image img {
             width: 100%;
             height: auto;
             display: block;
             transition: transform 0.5s ease;
         }
         
-        .intro-image img:hover {
+        .about-image img:hover {
             transform: scale(1.03);
         }
         
-        .mission-vision {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 40px;
-            margin-top: 50px;
+        /* Testimonials Section */
+        .testimonials {
+            padding: 100px 0;
+            background-color: var(--light-bg);
         }
         
-        .mission-card, .vision-card {
-            background-color: var(--light-bg);
+        .testimonial-slider {
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .testimonial-item {
+            background-color: var(--white);
             padding: 40px;
             border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 51, 102, 0.05);
-            transition: transform 0.3s ease;
-        }
-        
-        .mission-card:hover, .vision-card:hover {
-            transform: translateY(-10px);
-        }
-        
-        .mission-card h3, .vision-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: var(--primary-medium);
-            display: flex;
-            align-items: center;
-        }
-        
-        .mission-card h3 i, .vision-card h3 i {
-            margin-right: 15px;
-            background-color: var(--white);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-medium);
-        }
-        
-        /* History Timeline */
-        .history {
-            padding: 100px 0;
-            background-color: var(--light-bg);
-        }
-        
-        .timeline {
+            box-shadow: 0 10px 30px rgba(0, 51, 102, 0.08);
+            margin: 0 15px;
             position: relative;
-            max-width: 800px;
-            margin: 50px auto 0;
         }
         
-        .timeline::before {
-            content: '';
+        .testimonial-item::before {
+            content: "\201C";
             position: absolute;
-            width: 4px;
-            background-color: var(--primary-light);
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            margin-left: -2px;
+            top: 20px;
+            left: 20px;
+            font-size: 4rem;
+            color: var(--primary-light);
+            opacity: 0.3;
+            font-family: serif;
         }
         
-        .timeline-item {
-            padding: 10px 40px;
-            position: relative;
-            width: 50%;
-            box-sizing: border-box;
-            margin-bottom: 40px;
-        }
-        
-        .timeline-item:nth-child(odd) {
-            left: 0;
-        }
-        
-        .timeline-item:nth-child(even) {
-            left: 50%;
-        }
-        
-        .timeline-content {
-            padding: 20px 30px;
-            background-color: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 51, 102, 0.1);
-            position: relative;
-        }
-        
-        .timeline-content h4 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-            color: var(--primary-dark);
-        }
-        
-        .timeline-content p {
+        .testimonial-content {
+            margin-bottom: 25px;
+            font-size: 1.1rem;
             color: var(--text-light);
+            font-style: italic;
+            line-height: 1.8;
         }
         
-        .timeline-item:nth-child(odd) .timeline-content::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            right: -10px;
-            background-color: var(--white);
-            top: 30px;
-            transform: rotate(45deg);
-            box-shadow: 3px -3px 5px rgba(0, 0, 0, 0.05);
+        .testimonial-author {
+            display: flex;
+            align-items: center;
         }
         
-        .timeline-item:nth-child(even) .timeline-content::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            left: -10px;
-            background-color: var(--white);
-            top: 30px;
-            transform: rotate(45deg);
-            box-shadow: -3px 3px 5px rgba(0, 0, 0, 0.05);
-        }
-        
-        .timeline-item::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background-color: var(--primary-medium);
-            border: 4px solid var(--primary-light);
-            border-radius: 50%;
-            top: 30px;
-            right: -10px;
-        }
-        
-        .timeline-item:nth-child(even)::after {
-            left: -10px;
-        }
-        
-        /* Our Team */
-        .our-team {
-            padding: 100px 0;
-            background-color: var(--white);
-        }
-        
-        .team-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 40px;
-            margin-top: 50px;
-        }
-        
-        .team-member {
-            text-align: center;
-            background-color: var(--light-bg);
-            border-radius: 15px;
-            padding: 30px 20px;
-            box-shadow: 0 10px 20px rgba(0, 51, 102, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .team-member:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 51, 102, 0.1);
-        }
-        
-        .member-photo {
-            width: 150px;
-            height: 150px;
+        .author-avatar {
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             overflow: hidden;
-            margin: 0 auto 25px;
-            border: 5px solid var(--white);
-            box-shadow: 0 5px 15px rgba(0, 51, 102, 0.1);
+            margin-right: 15px;
+            border: 3px solid var(--primary-light);
         }
         
-        .member-photo img {
+        .author-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
         
-        .team-member h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: var(--primary-dark);
+        .author-info h4 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
         }
         
-        .team-member .position {
+        .author-info p {
             color: var(--primary-medium);
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         
-        .team-member p {
-            color: var(--text-light);
-            margin-bottom: 20px;
-            font-size: 0.95rem;
-        }
-        
-        .member-social {
+        .testimonial-controls {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            margin-top: 40px;
         }
         
-        .member-social a {
-            width: 40px;
-            height: 40px;
-            background-color: var(--white);
+        .testimonial-dots {
+            display: flex;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            background-color: #ccc;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary-medium);
-            transition: all 0.3s ease;
+            margin: 0 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
         
-        .member-social a:hover {
+        .dot.active {
             background-color: var(--primary-medium);
-            color: var(--white);
         }
         
         /* Footer */
@@ -540,46 +478,25 @@
         
         /* Responsive Styles */
         @media (max-width: 992px) {
-            .intro-content {
+            .hero-content {
                 flex-direction: column;
+                text-align: center;
             }
             
-            .mission-vision {
-                grid-template-columns: 1fr;
-                gap: 30px;
+            .hero-text {
+                margin-bottom: 50px;
             }
             
-            .team-container {
-                grid-template-columns: repeat(2, 1fr);
+            .hero-text h2 {
+                font-size: 2.5rem;
+            }
+            
+            .about-content {
+                flex-direction: column;
             }
             
             .footer-content {
                 grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .timeline::before {
-                left: 30px;
-            }
-            
-            .timeline-item {
-                width: 100%;
-                padding-left: 70px;
-                padding-right: 25px;
-            }
-            
-            .timeline-item:nth-child(even) {
-                left: 0;
-            }
-            
-            .timeline-item::after {
-                left: 20px;
-                right: auto;
-            }
-            
-            .timeline-item:nth-child(odd) .timeline-content::after,
-            .timeline-item:nth-child(even) .timeline-content::after {
-                left: -10px;
-                right: auto;
             }
         }
         
@@ -616,12 +533,16 @@
                 display: block;
             }
             
-            .page-hero {
-                padding: 120px 0 60px;
+            .hero {
+                padding: 120px 0 80px;
             }
             
-            .page-hero h1 {
-                font-size: 2.5rem;
+            .hero-text h2 {
+                font-size: 2rem;
+            }
+            
+            .about-features {
+                grid-template-columns: 1fr;
             }
             
             .section-title h2 {
@@ -630,20 +551,16 @@
         }
         
         @media (max-width: 576px) {
-            .team-container {
-                grid-template-columns: 1fr;
-            }
-            
             .footer-content {
                 grid-template-columns: 1fr;
             }
             
-            .page-hero h1 {
-                font-size: 2rem;
+            .testimonial-item {
+                padding: 30px 20px;
             }
             
-            .mission-card, .vision-card {
-                padding: 30px 20px;
+            .hero-text h2 {
+                font-size: 1.8rem;
             }
         }
     </style>
@@ -668,141 +585,151 @@
             
             <nav id="mainNav">
                 <ul>
-                    <li><a href="index.php">Home</a></li>
-                    <li><a href="about.php">About Us</a></li>
-                    <li><a href="contact.php">Contact</a></li>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#academics">Academics</a></li>
+                    <li><a href="#admissions">Admissions</a></li>
+                    <li><a href="#testimonials">Testimonials</a></li>
+                    <li><a href="#contact">Contact</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <!-- Page Hero -->
-    <section class="page-hero">
+    <!-- Hero Section -->
+    <section class="hero" id="home">
         <div class="container">
-            <h1>About Our School</h1>
-            <p>Discover our legacy of educational excellence, our dedicated team, and our vision for shaping tomorrow's leaders</p>
-        </div>
-    </section>
-
-    <!-- About Intro -->
-    <section class="about-intro">
-        <div class="container">
-            <div class="intro-content">
-                <div class="intro-text">
-                    <h3>Our Story & Philosophy</h3>
-                    <p>Founded in 1995, T&T School has been at the forefront of educational excellence for over 25 years. What began as a small institution with just 50 students has grown into a comprehensive educational community serving over 1,200 students from preschool through high school.</p>
-                    <p>Our philosophy is rooted in the belief that education should be a transformative experience that goes beyond textbooks and tests. We strive to create an environment where students can discover their passions, develop critical thinking skills, and cultivate a lifelong love of learning.</p>
-                    <p>At T&T School, we believe in holistic development that balances academic rigor with creative expression, physical well-being, and social responsibility. Our approach prepares students not just for college, but for life.</p>
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h2>Shaping Future Leaders Through Quality Education</h2>
+                    <p>At T&T School, we provide a nurturing environment that fosters intellectual curiosity, creativity, and character development for students of all ages.</p>
+                    <a href="#admissions" class="btn">Enroll Now</a>
                 </div>
-                <div class="intro-image">
-                    <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="T&T School Campus">
-                </div>
-            </div>
-            
-            <div class="mission-vision">
-                <div class="mission-card">
-                    <h3><i class="fas fa-bullseye"></i> Our Mission</h3>
-                    <p>To provide a nurturing and innovative learning environment that empowers students to achieve their full potential, develop strong character, and become responsible global citizens who contribute positively to society.</p>
-                </div>
-                
-                <div class="vision-card">
-                    <h3><i class="fas fa-eye"></i> Our Vision</h3>
-                    <p>To be recognized as a leading educational institution that inspires lifelong learning, fosters creativity and critical thinking, and prepares students to thrive in an ever-changing world through academic excellence and holistic development.</p>
+                <div class="hero-image">
+                    <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="T&T School Students">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- School History -->
-    <section class="history">
+    <!-- About Us Section -->
+    <section class="about" id="about">
         <div class="container">
             <div class="section-title">
-                <h2>Our Journey</h2>
+                <h2>About Our School</h2>
             </div>
             
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h4>1995 - Founding Years</h4>
-                        <p>T&T School was established with just 50 students and 8 dedicated teachers in a small building with a vision to provide quality education to the community.</p>
+            <div class="about-content">
+                <div class="about-text">
+                    <h3>Our Mission & Vision</h3>
+                    <p>Founded in 1995, T&T School has been at the forefront of educational excellence for over 25 years. We believe in holistic development that balances academic rigor with creative expression and physical well-being.</p>
+                    <p>Our experienced faculty and state-of-the-art facilities provide an environment where students can explore their potential and develop into well-rounded individuals ready to face the challenges of the future.</p>
+                    
+                    <div class="about-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <div>
+                                <h4>Academic Excellence</h4>
+                                <p>Consistently ranked among top schools in the region</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <h4>Expert Faculty</h4>
+                                <p>Highly qualified and dedicated teaching staff</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                            <div>
+                                <h4>Modern Facilities</h4>
+                                <p>Well-equipped labs, libraries, and sports facilities</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div>
+                                <h4>Inclusive Community</h4>
+                                <p>Welcoming environment for students from all backgrounds</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h4>2002 - First Expansion</h4>
-                        <p>Our first major expansion with the addition of a science lab, computer center, and library. Student population grew to 300 across elementary and middle school.</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h4>2010 - High School Program</h4>
-                        <p>Launched our high school program with college preparatory curriculum. Introduced Advanced Placement courses and extracurricular clubs.</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h4>2018 - STEM Innovation Center</h4>
-                        <p>Opened state-of-the-art STEM Innovation Center with robotics lab, 3D printing facilities, and dedicated spaces for collaborative projects.</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <h4>2023 - Recognition & Growth</h4>
-                        <p>Recognized as a "School of Excellence" by the State Education Board. Current enrollment exceeds 1,200 students with plans for a new performing arts center.</p>
-                    </div>
+                
+                <div class="about-image">
+                    <img src="https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="T&T School Campus">
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Our Team -->
-    <section class="our-team">
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
         <div class="container">
             <div class="section-title">
-                <h2>Meet Our Leadership Team</h2>
-                <p>Dedicated professionals committed to educational excellence</p>
+                <h2>What Parents & Students Say</h2>
             </div>
             
-            <div class="team-container">
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="Dr. Sarah Williams">
+            <div class="testimonial-slider">
+                <div class="testimonial-item active">
+                    <div class="testimonial-content">
+                        <p>T&T School has provided an exceptional educational experience for my daughter. The teachers are dedicated, the curriculum is challenging yet engaging, and the school community is wonderfully supportive. I've seen remarkable growth in her confidence and academic abilities.</p>
                     </div>
-                    <h3>Dr. Sarah Williams</h3>
-                    <div class="position">Head of School</div>
-                    <p>With over 20 years in educational leadership, Dr. Williams holds a Ph.D. in Educational Administration and is passionate about innovative teaching methodologies.</p>
-                    <div class="member-social">
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fas fa-envelope"></i></a>
-                    </div>
-                </div>
-                
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w-600&q=80" alt="Mr. David Chen">
-                    </div>
-                    <h3>Mr. David Chen</h3>
-                    <div class="position">Academic Director</div>
-                    <p>Former university professor with 15+ years experience in curriculum development. Specializes in STEM education and student assessment strategies.</p>
-                    <div class="member-social">
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fas fa-envelope"></i></a>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Sarah Johnson">
+                        </div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <p>Parent of Grade 8 Student</p>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="team-member">
-                    <div class="member-photo">
-                        <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="Ms. Priya Sharma">
+                <div class="testimonial-item">
+                    <div class="testimonial-content">
+                        <p>As a student at T&T School for the past 6 years, I can confidently say this institution has shaped me into who I am today. The opportunities for extracurricular activities alongside academic pursuits have helped me discover my passion for robotics and engineering.</p>
                     </div>
-                    <h3>Ms. Priya Sharma</h3>
-                    <div class="position">Director of Student Affairs</div>
-                    <p>Dedicated to student wellbeing and holistic development. Leads our counseling department and extracurricular programs with compassion and expertise.</p>
-                    <div class="member-social">
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fas fa-envelope"></i></a>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Chen">
+                        </div>
+                        <div class="author-info">
+                            <h4>Michael Chen</h4>
+                            <p>Grade 11 Student</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-item">
+                    <div class="testimonial-content">
+                        <p>The transition to T&T School was seamless for our family. The staff went above and beyond to ensure our son felt welcome and supported. His academic performance has improved significantly, and he's more excited about learning than ever before.</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Priya Patel">
+                        </div>
+                        <div class="author-info">
+                            <h4>Priya Patel</h4>
+                            <p>Parent of Grade 5 Student</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-controls">
+                    <div class="testimonial-dots">
+                        <span class="dot active" data-slide="0"></span>
+                        <span class="dot" data-slide="1"></span>
+                        <span class="dot" data-slide="2"></span>
                     </div>
                 </div>
             </div>
@@ -810,7 +737,7 @@
     </section>
 
     <!-- Footer -->
-    <footer>
+    <footer id="contact">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
@@ -826,11 +753,12 @@
                 
                 <div class="footer-column">
                     <h3>Quick Links</h3>
-                    <a href="index.html">Home</a>
-                    <a href="about.html">About Us</a>
-                    <a href="academics.html">Academics</a>
-                    <a href="admissions.html">Admissions</a>
-                    <a href="contact.html">Contact</a>
+                    <a href="#home">Home</a>
+                    <a href="#about">About Us</a>
+                    <a href="#academics">Academics</a>
+                    <a href="#admissions">Admissions</a>
+                    <a href="#testimonials">Testimonials</a>
+                    <a href="#contact">Contact</a>
                 </div>
                 
                 <div class="footer-column">
@@ -882,6 +810,55 @@
                 const icon = mobileMenuBtn.querySelector('i');
                 icon.classList.remove('fa-times');
                 icon.classList.add('fa-bars');
+            });
+        });
+        
+        // Testimonial Slider
+        const dots = document.querySelectorAll('.dot');
+        const testimonials = document.querySelectorAll('.testimonial-item');
+        
+        // Function to show a specific testimonial
+        function showTestimonial(index) {
+            // Hide all testimonials
+            testimonials.forEach(testimonial => {
+                testimonial.style.display = 'none';
+            });
+            
+            // Remove active class from all dots
+            dots.forEach(dot => {
+                dot.classList.remove('active');
+            });
+            
+            // Show selected testimonial and activate its dot
+            testimonials[index].style.display = 'block';
+            dots[index].classList.add('active');
+        }
+        
+        // Add click event to dots
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                showTestimonial(index);
+            });
+        });
+        
+        // Auto-rotate testimonials every 5 seconds
+        let currentTestimonial = 0;
+        function autoRotateTestimonials() {
+            currentTestimonial = (currentTestimonial + 1) % testimonials.length;
+            showTestimonial(currentTestimonial);
+        }
+        
+        // Start auto rotation
+        let testimonialInterval = setInterval(autoRotateTestimonials, 5000);
+        
+        // Pause auto rotation when user interacts with dots
+        dots.forEach(dot => {
+            dot.addEventListener('mouseenter', () => {
+                clearInterval(testimonialInterval);
+            });
+            
+            dot.addEventListener('mouseleave', () => {
+                testimonialInterval = setInterval(autoRotateTestimonials, 5000);
             });
         });
         
