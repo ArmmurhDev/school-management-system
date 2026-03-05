@@ -936,66 +936,8 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="logo-text">
-                    <h2>T&T School</h2>
-                    <p>Student Management</p>
-                </div>
-            </div>
-            
-            <div class="sidebar-menu">
-                <a href="dashboard.html" class="menu-item">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span class="menu-text">Dashboard</span>
-                </a>
-                
-                <a href="manage-students.html" class="menu-item active">
-                    <i class="fas fa-users"></i>
-                    <span class="menu-text">Students</span>
-                </a>
-                
-                <a href="manage-teachers.html" class="menu-item">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <span class="menu-text">Teachers</span>
-                </a>
-                
-                <a href="manage-courses.html" class="menu-item">
-                    <i class="fas fa-book"></i>
-                    <span class="menu-text">Courses</span>
-                </a>
-                
-                <a href="manage-staff.html" class="menu-item">
-                    <i class="fas fa-user-tie"></i>
-                    <span class="menu-text">Staff</span>
-                </a>
-                
-                <a href="attendance.html" class="menu-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="menu-text">Attendance</span>
-                </a>
-                
-                <a href="grades.html" class="menu-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span class="menu-text">Grades</span>
-                </a>
-            </div>
-            
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Admin">
-                    </div>
-                    <div class="user-details">
-                        <h4>Dr. Sarah Williams</h4>
-                        <p>Academic Director</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Sidebar -->
+        <?php include '../include/admin_sidebar.php'; ?>
         
         <!-- Overlay for mobile -->
         <div class="overlay" id="overlay"></div>

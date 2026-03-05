@@ -1073,66 +1073,7 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="logo-text">
-                    <h2>T&T School</h2>
-                    <p>Staff Portal</p>
-                </div>
-            </div>
-            
-            <div class="sidebar-menu">
-                <a href="dashboard.html" class="menu-item">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span class="menu-text">Dashboard</span>
-                </a>
-                
-                <a href="manage-students.html" class="menu-item active">
-                    <i class="fas fa-users"></i>
-                    <span class="menu-text">Students</span>
-                </a>
-                
-                <a href="manage-courses.html" class="menu-item">
-                    <i class="fas fa-book"></i>
-                    <span class="menu-text">Courses</span>
-                </a>
-                
-                <a href="upload-results.html" class="menu-item">
-                    <i class="fas fa-file-upload"></i>
-                    <span class="menu-text">Upload Results</span>
-                </a>
-                
-                <a href="attendance.html" class="menu-item">
-                    <i class="fas fa-calendar-check"></i>
-                    <span class="menu-text">Attendance</span>
-                </a>
-                
-                <a href="reports.html" class="menu-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span class="menu-text">Reports</span>
-                </a>
-                
-                <a href="messages.html" class="menu-item">
-                    <i class="fas fa-envelope"></i>
-                    <span class="menu-text">Messages</span>
-                </a>
-            </div>
-            
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Teacher">
-                    </div>
-                    <div class="user-details">
-                        <h4>Mr. David Chen</h4>
-                        <p>Mathematics Teacher</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php include '../include/staff_sidebar.php'; ?>
         
         <!-- Overlay for mobile -->
         <div class="overlay" id="overlay"></div>
