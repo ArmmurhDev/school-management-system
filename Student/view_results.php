@@ -136,12 +136,12 @@
             width: 100%;
         }
         
-        .student-info {
+        .user-info {
             display: flex;
             align-items: center;
         }
         
-        .student-avatar {
+        .user-avatar {
             width: 45px;
             height: 45px;
             border-radius: 50%;
@@ -150,19 +150,19 @@
             border: 2px solid var(--primary-light);
         }
         
-        .student-avatar img {
+        .user-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
         
-        .student-details h4 {
+        .user-details h4 {
             color: var(--white);
             font-size: 0.95rem;
             margin-bottom: 3px;
         }
         
-        .student-details p {
+        .user-details p {
             color: rgba(255, 255, 255, 0.7);
             font-size: 0.8rem;
         }
