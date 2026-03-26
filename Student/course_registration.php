@@ -1071,66 +1071,7 @@
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <div class="logo-text">
-                    <h2>T&T School</h2>
-                    <p>Student Portal</p>
-                </div>
-            </div>
-            
-            <div class="sidebar-menu">
-                <a href="student-dashboard.html" class="menu-item">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span class="menu-text">Dashboard</span>
-                </a>
-                
-                <a href="student-courses.html" class="menu-item">
-                    <i class="fas fa-book"></i>
-                    <span class="menu-text">My Courses</span>
-                </a>
-                
-                <a href="student-registration.html" class="menu-item active">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span class="menu-text">Course Registration</span>
-                </a>
-                
-                <a href="student-grades.html" class="menu-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="menu-text">Grades</span>
-                </a>
-                
-                <a href="student-schedule.html" class="menu-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span class="menu-text">Schedule</span>
-                </a>
-                
-                <a href="student-messages.html" class="menu-item">
-                    <i class="fas fa-envelope"></i>
-                    <span class="menu-text">Messages</span>
-                </a>
-                
-                <a href="student-profile.html" class="menu-item">
-                    <i class="fas fa-user"></i>
-                    <span class="menu-text">Profile</span>
-                </a>
-            </div>
-            
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Student">
-                    </div>
-                    <div class="user-details">
-                        <h4>Michael Johnson</h4>
-                        <p>Grade 10 Student</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php include '../include/student-sidebar.php'; ?>
         
         <!-- Overlay for mobile -->
         <div class="overlay" id="overlay"></div>
