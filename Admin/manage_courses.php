@@ -1,3 +1,7 @@
+<?php
+require_once '../auth/session.php';
+checkAccess('admin');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

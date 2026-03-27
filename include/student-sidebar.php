@@ -20,9 +20,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Dashboard</span>
         </a>
         
-        <a href="course_registration.php" class="menu-item <?php echo ($current_page == 'course_registration.php') ? 'active' : ''; ?>">
+        <a href="my-courses.php" class="menu-item <?php echo ($current_page == 'my-courses.php') ? 'active' : ''; ?>">
             <i class="fas fa-book"></i>
             <span class="menu-text">My Courses</span>
+        </a>
+
+        <a href="course_registration.php" class="menu-item <?php echo ($current_page == 'course_registration.php') ? 'active' : ''; ?>">
+            <i class="fas fa-file-signature"></i>
+            <span class="menu-text">Course Registration</span>
         </a>
         
         <a href="view_results.php" class="menu-item <?php echo ($current_page == 'view_results.php') ? 'active' : ''; ?>">

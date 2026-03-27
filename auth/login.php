@@ -7,20 +7,15 @@
  */
 
 // Start the session to manage user login state
-session_start();
+require_once 'session.php';
+
+// If user is already logged in, redirect to their dashboard
+redirectIfLoggedIn();
 
 // Include the secure database configuration
 require_once '../include/config.php';
 
-// Check if HTTPS is used (Good Security Practice)
-// In a production environment, you should enforce HTTPS.
-// On localhost, this might not be set, so we just log/warn or check conditionally.
-if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === "off") {
-    // You could redirect to HTTPS here, or just note it.
-    // header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
-    // exit;
-    // For this local setup, we'll just add a comment.
-}
+// ... (previous HTTPS check comment)
 
 $error = '';
 
@@ -29,7 +24,7 @@ if (isset($_POST['login'])) {
     
     // Sanitize input
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-    $password = $_POST['password']; // Password doesn't need sanitization, just verification
+    $password = $_POST['password']; 
 
     if (empty($email) || empty($password)) {
         $error = "Please enter both email and password.";
@@ -41,12 +36,14 @@ if (isset($_POST['login'])) {
             $admin = $stmt->fetch();
 
             if ($admin && password_verify($password, $admin['password'])) {
+                // Regenerate session ID to prevent fixation
+                session_regenerate_id(true);
+                
                 // Login Success: Admin
                 $_SESSION['user_id'] = $admin['admin_id'];
                 $_SESSION['role'] = 'admin';
                 $_SESSION['full_name'] = $admin['full_name'];
                 
-                // Redirect to Admin Dashboard
                 header("Location: ../admin/dashboard.php");
                 exit;
             }
@@ -57,12 +54,14 @@ if (isset($_POST['login'])) {
             $staff = $stmt->fetch();
 
             if ($staff && password_verify($password, $staff['password'])) {
+                // Regenerate session ID
+                session_regenerate_id(true);
+
                 // Login Success: Staff
                 $_SESSION['user_id'] = $staff['staff_id'];
                 $_SESSION['role'] = 'staff';
                 $_SESSION['full_name'] = $staff['full_name'];
 
-                // Redirect to Staff Dashboard
                 header("Location: ../staff/dashboard.php");
                 exit;
             }
@@ -73,13 +72,14 @@ if (isset($_POST['login'])) {
             $student = $stmt->fetch();
 
             if ($student && password_verify($password, $student['password'])) {
+                // Regenerate session ID
+                session_regenerate_id(true);
+
                 // Login Success: Student
                 $_SESSION['user_id'] = $student['student_id'];
                 $_SESSION['role'] = 'student';
                 $_SESSION['full_name'] = $student['full_name'];
 
-                // Redirect to Student Dashboard (Note the capital 'S' in directory if applicable)
-                // Based on previous checks, the directory is 'Student'
                 header("Location: ../Student/dashboard.php");
                 exit;
             }

@@ -1,3 +1,7 @@
+<?php
+require_once 'session.php';
+redirectIfLoggedIn();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
