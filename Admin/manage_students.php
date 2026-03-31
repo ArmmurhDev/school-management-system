@@ -1544,7 +1544,9 @@ checkAccess('admin');
             });
             
             // Modal controls
-            addStudentBtn.addEventListener('click', () => openModal('add'));
+            addStudentBtn.addEventListener('click', () => {
+                window.location.href = 'add_new_student.php';
+            });
             
             closeModal.addEventListener('click', closeModalFunc);
             cancelModalBtn.addEventListener('click', closeModalFunc);
