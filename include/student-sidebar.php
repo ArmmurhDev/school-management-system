@@ -64,11 +64,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <div class="sidebar-footer">
         <div class="user-info">
             <div class="user-avatar">
-                <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Student">
+                <?php 
+                $student_image = !empty($_SESSION['image']) ? '../assets/images/student/' . $_SESSION['image'] : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['full_name']) . '&background=random';
+                ?>
+                <img src="<?php echo $student_image; ?>" alt="Student">
             </div>
             <div class="user-details">
-                <h4>Michael Johnson</h4>
-                <p>Grade 10 | Section A</p>
+                <h4><?php echo htmlspecialchars($_SESSION['full_name']); ?></h4>
+                <p>Student Portal</p>
             </div>
         </div>
     </div>

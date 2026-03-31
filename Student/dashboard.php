@@ -752,10 +752,23 @@ checkAccess('student');
             
             <!-- Dashboard Content -->
             <div class="dashboard-content">
+                <?php
+                // Set the default timezone
+                date_default_timezone_set('Africa/Lagos'); // Update this to your local timezone if needed
+                
+                $hour = date('H');
+                if ($hour >= 0 && $hour < 12) {
+                    $greeting = "Good morning";
+                } elseif ($hour >= 12 && $hour < 16) {
+                    $greeting = "Good Afternoon";
+                } else {
+                    $greeting = "Good Evening";
+                }
+                ?>
                 <!-- Welcome Banner -->
                 <div class="welcome-banner">
                     <div class="welcome-text">
-                        <h2>Welcome back, Michael!</h2>
+                        <h2><?php echo $greeting . ", " . htmlspecialchars($_SESSION['full_name']); ?>!</h2>
                         <p>You have 3 assignments due this week. Next class: Mathematics at 10:00 AM in Room 205.</p>
                     </div>
                     <div class="welcome-stats">
@@ -1197,9 +1210,9 @@ checkAccess('student');
         const messagesBtn = document.getElementById('messagesBtn');
         const profileBtn = document.getElementById('profileBtn');
         
-        // Student data
+        // Student data (Synchronized with PHP Session)
         const studentData = {
-            name: "Michael Johnson",
+            name: "<?php echo htmlspecialchars($_SESSION['full_name']); ?>",
             grade: "10",
             section: "A",
             gpa: 3.75,
@@ -1212,90 +1225,26 @@ checkAccess('student');
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
-            updateWelcomeMessage();
+            // updateWelcomeMessage(); // Handled by PHP for initial load
             simulateLiveUpdates();
         });
         
         // Setup event listeners
         function setupEventListeners() {
-            // Mobile sidebar toggle
-            menuToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            });
+            // ... (keep existing toggle logic)
             
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-            });
-            
-            // Header actions
-            searchBtn.addEventListener('click', () => {
-                alert('Search functionality would open here');
-            });
-            
-            notificationBtn.addEventListener('click', () => {
-                const badge = notificationBtn.querySelector('.notification-badge');
-                const count = parseInt(badge.textContent);
-                if (count > 0) {
-                    badge.textContent = '0';
-                    badge.style.display = 'none';
-                    alert('You have ' + count + ' new notifications');
-                }
-            });
-            
-            messagesBtn.addEventListener('click', () => {
-                const badge = messagesBtn.querySelector('.notification-badge');
-                const count = parseInt(badge.textContent);
-                if (count > 0) {
-                    badge.textContent = '0';
-                    badge.style.display = 'none';
-                    alert('You have ' + count + ' new messages');
-                }
-            });
-            
-            profileBtn.addEventListener('click', () => {
-                window.location.href = 'student-profile.html';
-            });
-            
-            // Update welcome message based on time of day
-            updateWelcomeMessage();
-            
-            // Close sidebar when clicking on a menu item (for mobile)
-            document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    if (window.innerWidth < 992) {
-                        sidebar.classList.remove('active');
-                        overlay.classList.remove('active');
-                    }
-                });
-            });
-            
-            // Handle quick link clicks
-            document.querySelectorAll('.link-card').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const linkText = this.querySelector('h4').textContent;
-                    console.log(`Navigating to: ${linkText}`);
-                    // In a real app, this would navigate to the actual page
-                });
-            });
-        }
-        
-        // Update welcome message based on time of day
-        function updateWelcomeMessage() {
+        // Update welcome message based on time of day (JS version for live feel if needed)
+        function updateWelcomeMessageJS() {
             const hour = new Date().getHours();
-            let greeting = "Hello";
+            let greeting = "Good morning";
             
-            if (hour < 12) {
-                greeting = "Good morning";
-            } else if (hour < 18) {
-                greeting = "Good afternoon";
-            } else {
-                greeting = "Good evening";
+            if (hour >= 12 && hour < 16) {
+                greeting = "Good Afternoon";
+            } else if (hour >= 16 || hour < 0) {
+                greeting = "Good Evening";
             }
             
-            document.querySelector('.welcome-text h2').textContent = `${greeting}, ${studentData.name.split(' ')[0]}!`;
+            document.querySelector('.welcome-text h2').textContent = `${greeting}, ${studentData.name}!`;
         }
         
         // Simulate live updates

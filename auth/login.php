@@ -22,75 +22,64 @@ $error = '';
 // Check if the form is submitted
 if (isset($_POST['login'])) {
     
-    // Sanitize input
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    // Get the generic identifier (Email or Admission Number)
+    $identifier = trim($_POST['identifier']);
     $password = $_POST['password']; 
 
-    if (empty($email) || empty($password)) {
-        $error = "Please enter both email and password.";
+    if (empty($identifier) || empty($password)) {
+        $error = "Please enter your credentials.";
     } else {
         try {
             // 1. Check Admin Table
-            $stmt = $pdo->prepare("SELECT * FROM admin WHERE email = :email");
-            $stmt->execute(['email' => $email]);
+            $stmt = $pdo->prepare("SELECT * FROM admin WHERE email = :identifier");
+            $stmt->execute(['identifier' => $identifier]);
             $admin = $stmt->fetch();
 
             if ($admin && password_verify($password, $admin['password'])) {
-                // Regenerate session ID to prevent fixation
                 session_regenerate_id(true);
-                
-                // Login Success: Admin
                 $_SESSION['user_id'] = $admin['admin_id'];
                 $_SESSION['role'] = 'admin';
                 $_SESSION['full_name'] = $admin['full_name'];
-                
                 header("Location: ../admin/dashboard.php");
                 exit;
             }
 
             // 2. Check Staff Table
-            $stmt = $pdo->prepare("SELECT * FROM staff WHERE email = :email");
-            $stmt->execute(['email' => $email]);
+            $stmt = $pdo->prepare("SELECT * FROM staff WHERE email = :identifier");
+            $stmt->execute(['identifier' => $identifier]);
             $staff = $stmt->fetch();
 
             if ($staff && password_verify($password, $staff['password'])) {
-                // Regenerate session ID
                 session_regenerate_id(true);
-
-                // Login Success: Staff
                 $_SESSION['user_id'] = $staff['staff_id'];
                 $_SESSION['role'] = 'staff';
                 $_SESSION['full_name'] = $staff['full_name'];
-
                 header("Location: ../staff/dashboard.php");
                 exit;
             }
 
-            // 3. Check Students Table
-            $stmt = $pdo->prepare("SELECT * FROM students WHERE email = :email");
-            $stmt->execute(['email' => $email]);
+            // 3. Check Students Table (Using unique placeholders for Email and Admission Number)
+            $stmt = $pdo->prepare("SELECT * FROM students WHERE email = :id1 OR admission_no = :id2");
+            $stmt->execute(['id1' => $identifier, 'id2' => $identifier]);
             $student = $stmt->fetch();
 
             if ($student && password_verify($password, $student['password'])) {
-                // Regenerate session ID
                 session_regenerate_id(true);
-
-                // Login Success: Student
                 $_SESSION['user_id'] = $student['student_id'];
                 $_SESSION['role'] = 'student';
                 $_SESSION['full_name'] = $student['full_name'];
-
+                $_SESSION['image'] = $student['image'];
                 header("Location: ../Student/dashboard.php");
                 exit;
             }
 
-            // If we reach here, no user was found or password was incorrect
-            $error = "Invalid email or password.";
+            $error = "Invalid credentials.";
 
         } catch (PDOException $e) {
-            // Log the error securely
+            // For debugging: display the actual error. 
+            // In a live production site, you should change this back to a generic message.
+            $error = "Database Error: " . $e->getMessage();
             error_log("Login Error: " . $e->getMessage());
-            $error = "An system error occurred. Please try again later.";
         }
     }
 }
@@ -134,9 +123,9 @@ if (isset($_POST['login'])) {
                 <?php endif; ?>
                 
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-                    <i class="fas fa-envelope input-icon"></i>
+                    <label for="identifier">Email or Admission No</label>
+                    <input type="text" id="identifier" name="identifier" class="form-control" placeholder="Email or Admission No" required value="<?php echo isset($_POST['identifier']) ? htmlspecialchars($_POST['identifier']) : ''; ?>">
+                    <i class="fas fa-user input-icon"></i>
                 </div>
 
                 <div class="form-group">
