@@ -18,7 +18,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Dashboard</span>
         </a>
         
-        <a href="#" class="menu-item">
+        <a href="my_classes.php" class="menu-item">
             <i class="fas fa-chalkboard-teacher"></i>
             <span class="menu-text">My Classes</span>
         </a>
