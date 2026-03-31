@@ -53,7 +53,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Messages</span>
         </a>
         
-        <a href="logout.php" class="menu-item">
+        <a href="../auth/logout.php" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
             <span class="menu-text">Logout</span>
         </a>

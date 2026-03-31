@@ -49,9 +49,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Reports / Results</span>
         </a>
         
-        <a href="#" class="menu-item">
-            <i class="fas fa-cog"></i>
-            <span class="menu-text">Settings</span>
+        <a href="../auth/logout.php" class="menu-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="menu-text">Logout</span>
         </a>
     </div>
     

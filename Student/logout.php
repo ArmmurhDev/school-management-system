@@ -1,3 +1,19 @@
+<?php
+session_start();
+if (isset($_POST['confirm_logout'])) {
+    $_SESSION = array();
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
+    header("Location: ../auth/login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -694,26 +710,28 @@
                 <p>Always log out from shared computers. If you're using a school computer, make sure to clear browser cache if needed for privacy.</p>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-cancel" id="cancelBtn">
-                    <i class="fas fa-arrow-left"></i> Back to Portal
-                </button>
-                <button class="btn btn-logout" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
+            <form method="POST">
+                <div class="action-buttons">
+                    <a href="dashboard.php" class="btn btn-cancel" id="cancelBtn">
+                        <i class="fas fa-arrow-left"></i> Back to Portal
+                    </a>
+                    <button type="submit" name="confirm_logout" class="btn btn-logout" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </form>
             
             <div class="quick-links">
-                <a href="student-dashboard.html" class="quick-link">
+                <a href="dashboard.php" class="quick-link">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a href="student-courses.html" class="quick-link">
+                <a href="my-courses.php" class="quick-link">
                     <i class="fas fa-book"></i> My Courses
                 </a>
-                <a href="student-assignments.html" class="quick-link">
+                <a href="student-assignments.php" class="quick-link">
                     <i class="fas fa-tasks"></i> Assignments
                 </a>
-                <a href="student-grades.html" class="quick-link">
+                <a href="view_results.php" class="quick-link">
                     <i class="fas fa-chart-line"></i> Grades
                 </a>
             </div>
@@ -762,14 +780,16 @@
         // Setup event listeners
         function setupEventListeners() {
             // Logout Button Click
-            logoutBtn.addEventListener('click', function() {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 startLogoutProcess();
             });
             
             // Cancel Button Click
-            cancelBtn.addEventListener('click', function() {
+            cancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 if (confirm('Return to student dashboard without logging out?')) {
-                    window.location.href = 'student-dashboard.html';
+                    window.location.href = 'dashboard.php';
                 }
             });
             
@@ -789,7 +809,7 @@
                 // Escape key to cancel
                 if (e.key === 'Escape') {
                     if (confirm('Return to dashboard without logging out?')) {
-                        window.location.href = 'student-dashboard.html';
+                        window.location.href = 'dashboard.php';
                     }
                 }
                 
@@ -864,10 +884,10 @@
                 logoutProcess.querySelector('h3').textContent = 'Successfully Logged Out!';
                 logoutProcess.querySelector('p').textContent = 'You have been securely logged out. Redirecting to login page...';
                 
-                // Redirect to login page after 2 seconds
+                // Submit form
                 setTimeout(() => {
-                    window.location.href = 'student-login.html';
-                }, 2000);
+                    logoutBtn.closest('form').submit();
+                }, 1500);
             }, 4000);
         }
         
@@ -911,92 +931,15 @@
             }, 300000); // 5 minutes
         }
         
-        // Update session stats in real-time (simulated)
-        function simulateActivityUpdates() {
-            // Randomly increment activities completed
-            setInterval(() => {
-                const activitiesElement = document.querySelector('.stat-icon.activities + .stat-value');
-                const currentActivities = parseInt(activitiesElement.textContent);
-                
-                // 10% chance to increment
-                if (Math.random() < 0.1) {
-                    activitiesElement.textContent = currentActivities + 1;
-                    sessionData.activitiesCompleted = currentActivities + 1;
-                    
-                    // Show notification
-                    showNotification('New activity recorded!');
-                }
-            }, 30000); // Every 30 seconds
-            
-            // Update last activity time
-            setInterval(() => {
-                sessionData.lastActivity = new Date();
-                updateSessionDetails();
-            }, 60000); // Every minute
-        }
-        
-        // Show notification
-        function showNotification(message) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background-color: var(--student-blue);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 10px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-                max-width: 300px;
-            `;
-            
-            notification.innerHTML = `
-                <div style="display: flex; align-items: center;">
-                    <i class="fas fa-info-circle" style="margin-right: 10px;"></i>
-                    <span>${message}</span>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
-        
-        // Add CSS for notification animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Start simulating activity updates
-        simulateActivityUpdates();
-        
         // Add a return link at the bottom
         const returnLink = document.createElement('a');
-        returnLink.href = 'student-dashboard.html';
+        returnLink.href = 'dashboard.php';
         returnLink.className = 'return-link';
         returnLink.innerHTML = '<i class="fas fa-arrow-left"></i> Return to Student Dashboard';
         returnLink.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Return to dashboard without logging out?')) {
-                window.location.href = 'student-dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         

@@ -1,3 +1,19 @@
+<?php
+session_start();
+if (isset($_POST['confirm_logout'])) {
+    $_SESSION = array();
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
+    header("Location: ../auth/login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -487,17 +503,19 @@
                 <p>For security reasons, please ensure you are logging out from a private device. If you are using a public or shared computer, we recommend clearing the browser cache after logout.</p>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-cancel" id="cancelBtn">
-                    <i class="fas fa-arrow-left"></i> Cancel & Return
-                </button>
-                <button class="btn btn-logout" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
+            <form method="POST">
+                <div class="action-buttons">
+                    <a href="dashboard.php" class="btn btn-cancel" id="cancelBtn">
+                        <i class="fas fa-arrow-left"></i> Cancel & Return
+                    </a>
+                    <button type="submit" name="confirm_logout" class="btn btn-logout" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </form>
             
             <div class="logout-footer">
-                <p>If you're not ready to log out, you can return to the <a href="dashboard.html" id="dashboardLink">Dashboard</a>.</p>
+                <p>If you're not ready to log out, you can return to the <a href="dashboard.php" id="dashboardLink">Dashboard</a>.</p>
                 <p style="margin-top: 10px; font-size: 0.85rem;">&copy; 2023 T&T School Management System</p>
             </div>
         </div>
@@ -521,13 +539,14 @@
         const cancelBtn = document.getElementById('cancelBtn');
         const dashboardLink = document.getElementById('dashboardLink');
         
-        // Logout Button Click
-        logoutBtn.addEventListener('click', function() {
+        // Logout Button Click - Show animation before submitting
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             // Show loading animation
             logoutCard.style.display = 'none';
             logoutProcess.style.display = 'flex';
             
-            // Simulate logout process
+            // Simulate logout process for visual effect
             setTimeout(() => {
                 // Update the message
                 logoutProcess.querySelector('h3').textContent = 'Logout Successful!';
@@ -540,18 +559,19 @@
                 spinner.style.animation = 'none';
                 spinner.innerHTML = '<i class="fas fa-check" style="font-size: 2.5rem; color: #28a745; line-height: 70px;"></i>';
                 
-                // Redirect to login page after 2 seconds
+                // Submit the form after 1.5 seconds
                 setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 2000);
-            }, 2000);
+                    logoutBtn.closest('form').submit();
+                }, 1500);
+            }, 1500);
         });
         
         // Cancel Button Click
-        cancelBtn.addEventListener('click', function() {
+        cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             // Show confirmation dialog
             if (confirm('Return to dashboard without logging out?')) {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -559,7 +579,7 @@
         dashboardLink.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Return to dashboard without logging out?')) {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -568,7 +588,7 @@
             // Escape key to cancel
             if (e.key === 'Escape') {
                 if (confirm('Return to dashboard without logging out?')) {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'dashboard.php';
                 }
             }
             
@@ -626,13 +646,13 @@
         
         // Add a return link at the bottom
         const returnLink = document.createElement('a');
-        returnLink.href = 'dashboard.html';
+        returnLink.href = 'dashboard.php';
         returnLink.className = 'return-link';
         returnLink.innerHTML = '<i class="fas fa-arrow-left"></i> Return to Dashboard';
         returnLink.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Return to dashboard without logging out?')) {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         

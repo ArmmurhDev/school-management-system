@@ -1,3 +1,19 @@
+<?php
+session_start();
+if (isset($_POST['confirm_logout'])) {
+    $_SESSION = array();
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
+    header("Location: ../auth/login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -646,27 +662,29 @@
             <div class="staff-resources">
                 <h5><i class="fas fa-link"></i> Quick Access After Login</h5>
                 <ul class="resources-list">
-                    <li><a href="#">Staff Dashboard</a></li>
+                    <li><a href="dashboard.php">Staff Dashboard</a></li>
                     <li><a href="#">My Classes & Schedule</a></li>
                     <li><a href="#">Grade Submission Portal</a></li>
                     <li><a href="#">Staff Announcements</a></li>
                 </ul>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-cancel" id="cancelBtn">
-                    <i class="fas fa-arrow-left"></i> Cancel & Return
-                </button>
-                <button class="btn btn-logout" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
+            <form method="POST">
+                <div class="action-buttons">
+                    <a href="dashboard.php" class="btn btn-cancel" id="cancelBtn">
+                        <i class="fas fa-arrow-left"></i> Cancel & Return
+                    </a>
+                    <button type="submit" name="confirm_logout" class="btn btn-logout" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </form>
             
             <div class="logout-footer">
-                <p>Need to check something? You can return to the <a href="staff-dashboard.html" id="dashboardLink">Staff Dashboard</a>.</p>
+                <p>Need to check something? You can return to the <a href="dashboard.php" id="dashboardLink">Staff Dashboard</a>.</p>
                 <p style="margin-top: 10px; font-size: 0.85rem;">&copy; 2023 T&T School Staff Portal</p>
                 
-                <a href="#" class="return-link" id="quickReturnLink">
+                <a href="dashboard.php" class="return-link" id="quickReturnLink">
                     <i class="fas fa-tachometer-alt"></i> Back to Dashboard
                 </a>
             </div>
@@ -716,34 +734,9 @@
         // Initialize session duration
         updateSessionDuration();
         
-        // Simulate task counts (in a real app, these would come from the server)
-        function updateTaskCounts() {
-            // Randomly update counts to simulate real-time changes
-            const tasks = parseInt(pendingTasks.textContent);
-            const messages = parseInt(unreadMessages.textContent);
-            const grades = parseInt(gradesToSubmit.textContent);
-            
-            // Small chance to decrease tasks
-            if (Math.random() > 0.8 && tasks > 0) {
-                pendingTasks.textContent = tasks - 1;
-            }
-            
-            // Small chance to increase messages
-            if (Math.random() > 0.9) {
-                unreadMessages.textContent = messages + 1;
-            }
-            
-            // Small chance to decrease grades
-            if (Math.random() > 0.85 && grades > 0) {
-                gradesToSubmit.textContent = grades - 1;
-            }
-        }
-        
-        // Update task counts every 30 seconds
-        setInterval(updateTaskCounts, 30000);
-        
-        // Logout Button Click
-        logoutBtn.addEventListener('click', function() {
+        // Logout Button Click - Show animation before submitting
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             // Show confirmation with staff-specific message
             if (!confirm('Log out now? Make sure all student grades and attendance are saved.\n\nAny unsaved work in the grade submission system will be lost.')) {
                 return;
@@ -778,18 +771,10 @@
                             spinner.style.animation = 'none';
                             spinner.innerHTML = '<i class="fas fa-check" style="font-size: 2.5rem; color: #28a745; line-height: 70px;"></i>';
                             
-                            // Add staff-specific success message
-                            const successMsg = document.createElement('p');
-                            successMsg.style.marginTop = '15px';
-                            successMsg.style.color = 'var(--success)';
-                            successMsg.style.fontSize = '0.9rem';
-                            successMsg.innerHTML = '<i class="fas fa-clipboard-check"></i> All session data saved successfully';
-                            logoutProcess.appendChild(successMsg);
-                            
-                            // Redirect to login page after 2 seconds
+                            // Submit form
                             setTimeout(() => {
-                                window.location.href = 'staff-login.html';
-                            }, 2000);
+                                logoutBtn.closest('form').submit();
+                            }, 1500);
                         }, 1000);
                     }, 1000);
                 }, 1000);
@@ -797,10 +782,11 @@
         });
         
         // Cancel Button Click
-        cancelBtn.addEventListener('click', function() {
+        cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             // Show confirmation with staff context
             if (confirm('Return to staff dashboard without logging out?\n\nYou have ' + pendingTasks.textContent + ' pending tasks and ' + gradesToSubmit.textContent + ' grades to submit.')) {
-                window.location.href = 'staff-dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -808,7 +794,7 @@
         dashboardLink.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Return to staff dashboard without logging out?')) {
-                window.location.href = 'staff-dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -816,7 +802,7 @@
         quickReturnLink.addEventListener('click', function(e) {
             e.preventDefault();
             if (confirm('Return to staff dashboard without logging out?')) {
-                window.location.href = 'staff-dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -825,7 +811,7 @@
             // Escape key to cancel
             if (e.key === 'Escape') {
                 if (confirm('Return to staff dashboard without logging out?')) {
-                    window.location.href = 'staff-dashboard.html';
+                    window.location.href = 'dashboard.php';
                 }
             }
             
@@ -838,7 +824,7 @@
             // D key to go to dashboard (with Ctrl)
             if (e.ctrlKey && e.key === 'd') {
                 e.preventDefault();
-                window.location.href = 'staff-dashboard.html';
+                window.location.href = 'dashboard.php';
             }
         });
         
@@ -870,104 +856,6 @@
         
         // Start the inactivity timer
         resetInactivityTimer();
-        
-        // Simulate today's schedule
-        function displayTodaysSchedule() {
-            const now = new Date();
-            const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-            
-            let scheduleMessage = '';
-            
-            if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Weekday
-                const currentHour = now.getHours();
-                
-                if (currentHour < 12) {
-                    scheduleMessage = 'Morning classes completed';
-                } else if (currentHour < 15) {
-                    scheduleMessage = 'Afternoon classes in progress';
-                } else {
-                    scheduleMessage = 'Teaching day completed';
-                }
-                
-                // Update the session details
-                const lastActivity = document.querySelectorAll('.detail-item')[3].querySelector('.detail-value');
-                lastActivity.textContent = scheduleMessage;
-            }
-        }
-        
-        // Initialize schedule display
-        displayTodaysSchedule();
-        
-        // Add a reminder for pending tasks
-        function checkPendingTasks() {
-            const tasks = parseInt(pendingTasks.textContent);
-            const grades = parseInt(gradesToSubmit.textContent);
-            
-            if (tasks > 5 || grades > 10) {
-                // Create a warning if many pending items
-                const warningDiv = document.createElement('div');
-                warningDiv.className = 'staff-warning';
-                warningDiv.style.marginTop = '15px';
-                warningDiv.innerHTML = `
-                    <h5><i class="fas fa-tasks"></i> Reminder</h5>
-                    <p>You have ${tasks} pending tasks and ${grades} grades to submit. Consider completing these before logging out.</p>
-                `;
-                
-                // Insert before action buttons
-                const actionButtons = document.querySelector('.action-buttons');
-                logoutCard.insertBefore(warningDiv, actionButtons);
-            }
-        }
-        
-        // Check pending tasks on load
-        checkPendingTasks();
-        
-        // Add holiday/special day notice
-        function checkSpecialDays() {
-            const now = new Date();
-            const month = now.getMonth() + 1; // 1-12
-            const day = now.getDate();
-            
-            let specialMessage = '';
-            
-            // Example: Check for end of grading period (simplified)
-            if (month === 10 && day >= 25) { // Late October
-                specialMessage = 'End of quarter grading period ends Nov 3';
-            } else if (month === 11 && day <= 3) { // Early November
-                specialMessage = 'GRADES DUE: Quarter ends tomorrow';
-            }
-            
-            if (specialMessage) {
-                const specialNotice = document.createElement('div');
-                specialNotice.className = 'staff-warning';
-                specialNotice.style.backgroundColor = 'rgba(30, 136, 229, 0.1)';
-                specialNotice.style.borderLeftColor = 'var(--accent-blue)';
-                specialNotice.style.marginTop = '15px';
-                specialNotice.innerHTML = `
-                    <h5><i class="fas fa-calendar-star"></i> Important Date</h5>
-                    <p>${specialMessage}</p>
-                `;
-                
-                // Insert before action buttons
-                const actionButtons = document.querySelector('.action-buttons');
-                logoutCard.insertBefore(specialNotice, actionButtons);
-            }
-        }
-        
-        // Check for special days
-        checkSpecialDays();
-        
-        // Handle window beforeunload (warn about unsaved changes)
-        window.addEventListener('beforeunload', function(e) {
-            const tasks = parseInt(pendingTasks.textContent);
-            const grades = parseInt(gradesToSubmit.textContent);
-            
-            if (tasks > 0 || grades > 0) {
-                // Cancel the event and show alert
-                e.preventDefault();
-                e.returnValue = `You have ${tasks} pending tasks and ${grades} grades to submit. Are you sure you want to leave?`;
-            }
-        });
     </script>
 </body>
 </html>
