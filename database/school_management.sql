@@ -47,9 +47,11 @@ CREATE TABLE IF NOT EXISTS `students` (
   `admission_no` varchar(20) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `class` varchar(20) NOT NULL,
-  `section` varchar(10) DEFAULT NULL,
-  `phone` varchar(20) DEFAULT NULL,
+  `age` int(3) NOT NULL,
+  `parent_guardian` varchar(100) NOT NULL,
+  `contact_number` varchar(20) NOT NULL,
+  `session_of_year` varchar(20) NOT NULL,
+  `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`student_id`),
   UNIQUE KEY `admission_no` (`admission_no`),
@@ -81,9 +83,8 @@ INSERT INTO `staff` (`full_name`, `email`, `password`, `qualification`, `positio
 --
 -- Demo Student
 -- Admission No: STD001
--- Email: student@school.com
 -- Password: password123
 --
-INSERT INTO `students` (`full_name`, `admission_no`, `email`, `password`, `class`, `section`, `phone`) VALUES
-('Alice Student', 'STD001', 'student@school.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '10', 'A', '1122334455'),
-('Bob Scholar', 'STD002', 'bob@school.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '12', 'B', '5544332211');
+INSERT INTO `students` (`full_name`, `admission_no`, `email`, `password`, `age`, `parent_guardian`, `contact_number`, `session_of_year`, `image`) VALUES
+('Alice Student', 'STD001', 'alice@student.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 15, 'Robert Student', '1122334455', '2023-2024', 'alice.jpg'),
+('Bob Scholar', 'STD002', 'bob@student.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 16, 'Mary Scholar', '5544332211', '2023-2024', 'bob.jpg');
