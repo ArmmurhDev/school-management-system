@@ -1,6 +1,76 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('admin');
+
+// Fetch dynamic academic sessions
+$sessions = getAcademicSessions($pdo);
+
+$success_message = "";
+$error_message = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Collect and sanitize inputs
+    $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
+    $admission_no = filter_input(INPUT_POST, 'admission_no', FILTER_SANITIZE_STRING);
+    $age = filter_input(INPUT_POST, 'age', FILTER_SANITIZE_NUMBER_INT);
+    $parent_guardian = filter_input(INPUT_POST, 'parent_guardian', FILTER_SANITIZE_STRING);
+    $contact_number = filter_input(INPUT_POST, 'contact_number', FILTER_SANITIZE_STRING);
+    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    $session_of_year = filter_input(INPUT_POST, 'session_of_year', FILTER_SANITIZE_STRING);
+    $password = $_POST['password'];
+
+    // Basic validation
+    if (empty($full_name) || empty($admission_no) || empty($email) || empty($password)) {
+        $error_message = "Please fill in all required fields.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = "Invalid email format.";
+    } else {
+        try {
+            // Check if email or admission_no already exists
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM students WHERE email = ? OR admission_no = ?");
+            $stmt->execute([$email, $admission_no]);
+            if ($stmt->fetchColumn() > 0) {
+                $error_message = "This email or admission number is already registered.";
+            } else {
+                // Handle image upload
+                $image_name = NULL;
+                if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+                    $filename = $_FILES['image']['name'];
+                    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                    
+                    if (in_array($ext, $allowed)) {
+                        // Generate a unique name for the image
+                        $image_name = "std_" . time() . "_" . uniqid() . "." . $ext;
+                        $upload_path = "../assets/images/student/" . $image_name;
+                        
+                        if (!move_uploaded_file($_FILES['image']['tmp_name'], $upload_path)) {
+                            $error_message = "Failed to upload image.";
+                        }
+                    } else {
+                        $error_message = "Invalid file type. Only JPG, PNG, and GIF are allowed.";
+                    }
+                }
+
+                if (empty($error_message)) {
+                    // Hash the password
+                    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                    // Insert into database
+                    $stmt = $pdo->prepare("INSERT INTO students (full_name, admission_no, email, password, age, parent_guardian, contact_number, session_of_year, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    if ($stmt->execute([$full_name, $admission_no, $email, $hashed_password, $age, $parent_guardian, $contact_number, $session_of_year, $image_name])) {
+                        $success_message = "Student registered successfully!";
+                    } else {
+                        $error_message = "Something went wrong. Please try again.";
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            $error_message = "Database error: " . $e->getMessage();
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,6 +88,25 @@ checkAccess('admin');
             --primary-soft: #1a6fb0;
             --success: #2b7e3a;
             --border-radius-card: 32px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
         }
 
         .registration-container {
@@ -195,6 +284,18 @@ checkAccess('admin');
                     </a>
                 </div>
 
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success">
+                        <?php echo $success_message; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($error_message): ?>
+                    <div class="alert alert-danger">
+                        <?php echo $error_message; ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="registration-container">
                     <div class="reg-header">
                         <div class="title-section">
@@ -204,7 +305,7 @@ checkAccess('admin');
                     </div>
 
                     <div class="form-content">
-                        <form id="registrationForm">
+                        <form id="registrationForm" action="add_new_student.php" method="POST" enctype="multipart/form-data">
                             <div class="form-grid">
                                 <!-- Left: Image Upload -->
                                 <div class="image-panel">
@@ -214,40 +315,41 @@ checkAccess('admin');
                                     <label class="upload-btn" for="studentImage">
                                         <i class="fas fa-cloud-upload-alt"></i> Upload Photo
                                     </label>
-                                    <input type="file" id="studentImage" accept="image/*" class="file-input">
+                                    <input type="file" id="studentImage" name="image" accept="image/*" class="file-input">
+                                    <p style="font-size: 0.7rem; margin-top: 12px; color: var(--text-muted);">Stored in assets/images/student/</p>
                                 </div>
 
                                 <!-- Right: Form Fields -->
                                 <div class="fields-panel">
                                     <div class="field-group">
                                         <label>Full Name *</label>
-                                        <input type="text" placeholder="Full legal name" required>
+                                        <input type="text" name="full_name" placeholder="Full legal name" value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name']) : ''; ?>" required>
                                     </div>
 
                                     <div class="row-2cols">
                                         <div class="field-group">
                                             <label>Admission No *</label>
-                                            <input type="text" placeholder="TT/26/xxx" required>
+                                            <input type="text" name="admission_no" placeholder="TT/26/xxx" value="<?php echo isset($_POST['admission_no']) ? htmlspecialchars($_POST['admission_no']) : ''; ?>" required>
                                         </div>
                                         <div class="field-group">
                                             <label>Age *</label>
-                                            <input type="number" placeholder="Age" required>
+                                            <input type="number" name="age" placeholder="Age" value="<?php echo isset($_POST['age']) ? htmlspecialchars($_POST['age']) : ''; ?>" required>
                                         </div>
                                     </div>
 
                                     <div class="field-group">
                                         <label>Parent / Guardian *</label>
-                                        <input type="text" placeholder="Guardian Name" required>
+                                        <input type="text" name="parent_guardian" placeholder="Guardian Name" value="<?php echo isset($_POST['parent_guardian']) ? htmlspecialchars($_POST['parent_guardian']) : ''; ?>" required>
                                     </div>
 
                                     <div class="row-2cols">
                                         <div class="field-group">
                                             <label><i class="fas fa-phone-alt"></i> Contact Number *</label>
-                                            <input type="tel" name="contact" placeholder="Phone number" required>
+                                            <input type="tel" name="contact_number" placeholder="Phone number" value="<?php echo isset($_POST['contact_number']) ? htmlspecialchars($_POST['contact_number']) : ''; ?>" required>
                                         </div>
                                         <div class="field-group">
                                             <label><i class="fas fa-envelope"></i> Email Address *</label>
-                                            <input type="email" name="email" placeholder="student@school.edu" required>
+                                            <input type="email" name="email" placeholder="student@school.edu" value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
                                         </div>
                                     </div>
 
@@ -258,15 +360,18 @@ checkAccess('admin');
                                         </div>
                                         <div class="field-group">
                                             <label><i class="fas fa-calendar-week"></i> Academic Session *</label>
-                                            <select name="session" required>
-                                                <option value="2024-2025">2024-2025</option>
-                                                <option value="2025-2026" selected>2025-2026</option>
-                                                <option value="2026-2027">2026-2027</option>
+                                            <select name="session_of_year" required>
+                                                <option value="">Select Session</option>
+                                                <?php foreach ($sessions as $session): ?>
+                                                    <option value="<?php echo $session; ?>" <?php echo (isset($_POST['session_of_year']) && $_POST['session_of_year'] == $session) ? 'selected' : (date('Y')."-".(date('Y')+1) == $session ? 'selected' : ''); ?>>
+                                                        <?php echo $session; ?>
+                                                    </option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
 
-                                    <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Save Student Record</button>
+                                    <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Register New Student</button>
                                 </div>
                             </div>
                         </form>
@@ -285,27 +390,34 @@ checkAccess('admin');
         const overlay = document.getElementById('overlay');
         const menuToggle = document.getElementById('menuToggle');
         
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+        }
         
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
 
         // Image preview logic
-        document.getElementById('studentImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    document.getElementById('imagePreview').innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
+        const studentImageInput = document.getElementById('studentImage');
+        if (studentImageInput) {
+            studentImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        document.getElementById('imagePreview').innerHTML = `<img src="${ev.target.result}" alt="Preview">`;
+                    }
+                    reader.readAsDataURL(file);
                 }
-                reader.readAsDataURL(file);
-            }
-        });
+            });
+        }
     </script>
 </body>
 </html>
