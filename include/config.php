@@ -71,11 +71,19 @@ try {
     }
 
     function getStaffPositions($pdo) {
-        // Ensure staff table has the subject column (migration)
-        try {
-            $pdo->query("SELECT subject FROM staff LIMIT 1");
-        } catch (Exception $e) {
-            $pdo->exec("ALTER TABLE staff ADD COLUMN subject VARCHAR(100) DEFAULT NULL AFTER qualification");
+        // Ensure staff table has the necessary columns (migration)
+        $migrations = [
+            'subject' => "ALTER TABLE staff ADD COLUMN subject VARCHAR(100) DEFAULT NULL AFTER qualification",
+            'phone' => "ALTER TABLE staff ADD COLUMN phone VARCHAR(20) DEFAULT NULL AFTER position",
+            'image' => "ALTER TABLE staff ADD COLUMN image VARCHAR(255) DEFAULT NULL AFTER phone"
+        ];
+
+        foreach ($migrations as $column => $sql) {
+            try {
+                $pdo->query("SELECT $column FROM staff LIMIT 1");
+            } catch (Exception $e) {
+                $pdo->exec($sql);
+            }
         }
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS `staff_positions` (
