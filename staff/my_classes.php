@@ -7,36 +7,224 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --primary-dark: #003366;
             --primary-deep: #00264d;
             --primary-medium: #00509E;
             --primary-soft: #1a6fb0;
             --primary-light: #4D8FCC;
+            --accent-blue: #1E88E5;
             --light-bg: #F0F8FF;
+            --sidebar-bg: #002147;
             --white: #FFFFFF;
             --text-dark: #1A2C3E;
             --text-soft: #2c3e50;
             --text-muted: #5a6e7c;
             --shadow-sm: 0 8px 20px rgba(0, 51, 102, 0.08);
             --shadow-md: 0 12px 28px rgba(0, 51, 102, 0.12);
+            --shadow: rgba(0, 51, 102, 0.1);
             --today-border: #4D8FCC;
             --border-radius-card: 28px;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(145deg, #eef5fc 0%, #e2edf7 100%);
+            background-color: #f5f7fb;
             color: var(--text-dark);
             line-height: 1.5;
-            padding: 28px 20px;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: var(--white);
+            transition: all 0.3s ease;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar-header {
+            padding: 25px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--primary-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .logo-icon i {
+            font-size: 22px;
+            color: var(--white);
+        }
+        
+        .logo-text h2 {
+            font-size: 1.5rem;
+            color: var(--white);
+            margin-bottom: 3px;
+        }
+        
+        .logo-text p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        
+        .menu-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            border-left: 3px solid transparent;
+        }
+        
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border-left-color: var(--accent-blue);
+        }
+        
+        .menu-item i {
+            width: 25px;
+            margin-right: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .menu-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 15px;
+            border: 2px solid var(--primary-light);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-details h4 {
+            color: var(--white);
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+        
+        .user-details p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .top-header {
+            background-color: var(--white);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            cursor: pointer;
+            margin-right: 20px;
+            display: none;
+        }
+
+        .page-title h1 {
+            font-size: 1.8rem;
+            color: var(--primary-dark);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        .dashboard-content {
+            padding: 30px;
         }
 
         .staff-container {
@@ -267,53 +455,116 @@
     </style>
 </head>
 <body>
-
-<div class="staff-container">
-    <div class="staff-header">
-        <div class="staff-row">
-            <div class="title-section">
-                <h1><i class="fas fa-chalkboard-user"></i> My Class Schedule</h1>
-                <p><i class="fas fa-user-graduate"></i> Prof. Sophia Lin · Computer Science Department · Staff ID: TCH-0042</p>
+    <div class="container">
+        <!-- Sidebar -->
+        <?php include '../include/staff_sidebar.php'; ?>
+        
+        <!-- Overlay for mobile -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h1>My Classes</h1>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <div class="header-action" style="margin-left: 25px; cursor: pointer;">
+                        <i class="fas fa-search" style="color: var(--primary-medium);"></i>
+                    </div>
+                    <div class="header-action" style="margin-left: 25px; cursor: pointer;">
+                        <i class="fas fa-bell" style="color: var(--primary-medium);"></i>
+                    </div>
+                    <div class="header-action" style="margin-left: 25px; cursor: pointer;">
+                        <i class="fas fa-user-circle" style="color: var(--primary-medium);"></i>
+                    </div>
+                </div>
             </div>
-            <div class="stats-badge">
-                <i class="fas fa-calendar-alt"></i> Spring 2025 Semester
+
+            <div class="dashboard-content">
+                <div class="staff-container">
+                    <div class="staff-header">
+                        <div class="staff-row">
+                            <div class="title-section">
+                                <h1><i class="fas fa-chalkboard-user"></i> My Class Schedule</h1>
+                                <p><i class="fas fa-user-graduate"></i> Prof. Sophia Lin · Computer Science Department · Staff ID: TCH-0042</p>
+                            </div>
+                            <div class="stats-badge">
+                                <i class="fas fa-calendar-alt"></i> Spring 2025 Semester
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's classes highlight -->
+                    <div class="today-highlight" id="todayHighlight">
+                        <div class="today-text"><i class="fas fa-sun"></i> <strong id="todayDate"></strong></div>
+                        <div class="today-classes" id="todayClasses">Loading today's classes...</div>
+                    </div>
+
+                    <!-- Upcoming Classes Section -->
+                    <div class="section-header">
+                        <i class="fas fa-calendar-week"></i>
+                        <h2>Upcoming Classes</h2>
+                    </div>
+                    <div id="upcomingContainer" class="classes-grid">
+                        <!-- dynamic cards -->
+                    </div>
+
+                    <!-- Past Classes Section -->
+                    <div class="section-header">
+                        <i class="fas fa-history"></i>
+                        <h2>Past Classes</h2>
+                    </div>
+                    <div id="pastContainer" class="classes-grid">
+                        <!-- dynamic cards -->
+                    </div>
+
+                    <footer>
+                        <p><i class="fas fa-clock"></i> Schedule reflects current semester · Contact admin for any changes</p>
+                        <p style="font-size: 0.7rem;">T&T School · Empowering Educators</p>
+                    </footer>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Today's classes highlight -->
-    <div class="today-highlight" id="todayHighlight">
-        <div class="today-text"><i class="fas fa-sun"></i> <strong id="todayDate"></strong></div>
-        <div class="today-classes" id="todayClasses">Loading today's classes...</div>
-    </div>
-
-    <!-- Upcoming Classes Section -->
-    <div class="section-header">
-        <i class="fas fa-calendar-week"></i>
-        <h2>Upcoming Classes</h2>
-    </div>
-    <div id="upcomingContainer" class="classes-grid">
-        <!-- dynamic cards -->
-    </div>
-
-    <!-- Past Classes Section -->
-    <div class="section-header">
-        <i class="fas fa-history"></i>
-        <h2>Past Classes</h2>
-    </div>
-    <div id="pastContainer" class="classes-grid">
-        <!-- dynamic cards -->
-    </div>
-
-    <footer>
-        <p><i class="fas fa-clock"></i> Schedule reflects current semester · Contact admin for any changes</p>
-        <p style="font-size: 0.7rem;">T&T School · Empowering Educators</p>
-    </footer>
-</div>
-
 <div id="toastMsg" class="toast"></div>
 
 <script>
+    // Sidebar Toggle Script
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const menuToggle = document.getElementById('menuToggle');
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if(window.innerWidth >= 992) {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+    });
+
     // ---------- MOCK DATA: TEACHER'S CLASS SCHEDULE (recurring and one-off) ----------
     // For simplicity, we'll generate classes for the next 14 days and past 7 days
     // based on a fixed weekly schedule for the teacher.

@@ -105,11 +105,45 @@ CREATE TABLE IF NOT EXISTS `students` (
   `parent_guardian` varchar(100) NOT NULL,
   `contact_number` varchar(20) NOT NULL,
   `session_of_year` varchar(20) NOT NULL,
+  `class_name` varchar(10) DEFAULT NULL,
   `image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`student_id`),
   UNIQUE KEY `admission_no` (`admission_no`),
   UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `classes` (
+  `class_id` int(11) NOT NULL AUTO_INCREMENT,
+  `class_name` varchar(10) NOT NULL,
+  PRIMARY KEY (`class_id`),
+  UNIQUE KEY `class_name` (`class_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `classes` (`class_name`) VALUES ('SS1'), ('SS2'), ('SS3');
+
+CREATE TABLE IF NOT EXISTS `courses` (
+  `course_id` int(11) NOT NULL AUTO_INCREMENT,
+  `course_name` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `level` varchar(20) DEFAULT 'beginner',
+  `class_name` varchar(10) DEFAULT NULL,
+  `instructor_id` int(11) DEFAULT NULL,
+  `schedule` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`course_id`),
+  KEY `instructor_id` (`instructor_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `course_registrations` (
+  `registration_id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `course_id` int(11) NOT NULL,
+  `registered_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`registration_id`),
+  UNIQUE KEY `student_course` (`student_id`, `course_id`),
+  KEY `student_id` (`student_id`),
+  KEY `course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------

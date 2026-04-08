@@ -129,6 +129,28 @@ try {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    function getClasses($pdo) {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `classes` (
+            `class_id` int(11) NOT NULL AUTO_INCREMENT,
+            `class_name` varchar(10) NOT NULL,
+            PRIMARY KEY (`class_id`),
+            UNIQUE KEY `class_name` (`class_name`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $classes = ['SS1', 'SS2', 'SS3'];
+        foreach ($classes as $c) {
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM classes WHERE class_name = ?");
+            $stmt->execute([$c]);
+            if ($stmt->fetchColumn() == 0) {
+                $stmt = $pdo->prepare("INSERT INTO classes (class_name) VALUES (?)");
+                $stmt->execute([$c]);
+            }
+        }
+
+        $stmt = $pdo->query("SELECT class_name FROM classes ORDER BY class_name ASC");
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
 } catch (PDOException $e) {
     // Handle connection errors
     // IN PRODUCTION: Log the error and show a generic message to the user

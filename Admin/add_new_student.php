@@ -5,6 +5,7 @@ checkAccess('admin');
 
 // Fetch dynamic academic sessions
 $sessions = getAcademicSessions($pdo);
+$classes = getClasses($pdo);
 
 $success_message = "";
 $error_message = "";
@@ -18,6 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $contact_number = filter_input(INPUT_POST, 'contact_number', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $session_of_year = filter_input(INPUT_POST, 'session_of_year', FILTER_SANITIZE_STRING);
+    $class_name = filter_input(INPUT_POST, 'class_name', FILTER_SANITIZE_STRING);
     $password = $_POST['password'];
 
     // Basic validation
@@ -58,8 +60,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
                     // Insert into database
-                    $stmt = $pdo->prepare("INSERT INTO students (full_name, admission_no, email, password, age, parent_guardian, contact_number, session_of_year, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    if ($stmt->execute([$full_name, $admission_no, $email, $hashed_password, $age, $parent_guardian, $contact_number, $session_of_year, $image_name])) {
+                    $stmt = $pdo->prepare("INSERT INTO students (full_name, admission_no, email, password, age, parent_guardian, contact_number, session_of_year, class_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    if ($stmt->execute([$full_name, $admission_no, $email, $hashed_password, $age, $parent_guardian, $contact_number, $session_of_year, $class_name, $image_name])) {
                         $success_message = "Student registered successfully!";
                     } else {
                         $error_message = "Something went wrong. Please try again.";
@@ -369,6 +371,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
+                                    </div>
+
+                                    <div class="field-group">
+                                        <label><i class="fas fa-graduation-cap"></i> Class *</label>
+                                        <select name="class_name" required>
+                                            <option value="">Select Class</option>
+                                            <?php foreach ($classes as $class): ?>
+                                                <option value="<?php echo htmlspecialchars($class); ?>" <?php echo (isset($_POST['class_name']) && $_POST['class_name'] == $class) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($class); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </div>
 
                                     <button type="submit" class="submit-btn"><i class="fas fa-save"></i> Register New Student</button>

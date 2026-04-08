@@ -3,6 +3,16 @@ require_once '../auth/session.php';
 require_once '../include/config.php';
 checkAccess('admin');
 
+// --- AUTO-FIX: Ensure class_name column exists ---
+try {
+    $pdo->query("SELECT class_name FROM students LIMIT 1");
+} catch (PDOException $e) {
+    if ($e->getCode() == '42S22') { // Column not found
+        $pdo->exec("ALTER TABLE students ADD COLUMN class_name VARCHAR(10) DEFAULT NULL AFTER session_of_year");
+    }
+}
+// --- END AUTO-FIX ---
+
 // Handle Student Deletion
 if (isset($_GET['delete_id'])) {
     $delete_id = $_GET['delete_id'];
@@ -35,10 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_student'])) {
     $contact_number = filter_input(INPUT_POST, 'contact_number', FILTER_SANITIZE_STRING);
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $session_of_year = filter_input(INPUT_POST, 'session_of_year', FILTER_SANITIZE_STRING);
+    $class_name = filter_input(INPUT_POST, 'class_name', FILTER_SANITIZE_STRING);
 
     try {
-        $stmt = $pdo->prepare("UPDATE students SET full_name = ?, admission_no = ?, age = ?, parent_guardian = ?, contact_number = ?, email = ?, session_of_year = ? WHERE student_id = ?");
-        $stmt->execute([$full_name, $admission_no, $age, $parent_guardian, $contact_number, $email, $session_of_year, $student_id]);
+        $stmt = $pdo->prepare("UPDATE students SET full_name = ?, admission_no = ?, age = ?, parent_guardian = ?, contact_number = ?, email = ?, session_of_year = ?, class_name = ? WHERE student_id = ?");
+        $stmt->execute([$full_name, $admission_no, $age, $parent_guardian, $contact_number, $email, $session_of_year, $class_name, $student_id]);
         header("Location: manage_students.php?msg=updated");
         exit;
     } catch (PDOException $e) {
@@ -50,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_student'])) {
 $students = [];
 try {
     $sessions = getAcademicSessions($pdo);
+    $classes = getClasses($pdo);
     $stmt = $pdo->query("SELECT * FROM students ORDER BY created_at DESC");
     $students = $stmt->fetchAll();
     
@@ -536,6 +548,7 @@ try {
                                 <tr>
                                     <th>Student</th>
                                     <th>Session</th>
+                                    <th>Class</th>
                                     <th>Parent/Guardian</th>
                                     <th>Contact Number</th>
                                     <th>Email</th>
@@ -557,6 +570,7 @@ try {
                                         </div>
                                     </td>
                                     <td><?php echo htmlspecialchars($student['session_of_year']); ?></td>
+                                    <td><?php echo htmlspecialchars($student['class_name']); ?></td>
                                     <td><?php echo htmlspecialchars($student['parent_guardian']); ?></td>
                                     <td><?php echo htmlspecialchars($student['contact_number']); ?></td>
                                     <td><?php echo htmlspecialchars($student['email']); ?></td>
@@ -626,13 +640,23 @@ try {
                             <input type="text" name="contact_number" id="edit_contact_number" required>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Academic Session</label>
-                        <select name="session_of_year" id="edit_session">
-                            <?php foreach ($sessions as $session): ?>
-                                <option value="<?php echo $session; ?>"><?php echo $session; ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Academic Session</label>
+                            <select name="session_of_year" id="edit_session">
+                                <?php foreach ($sessions as $session): ?>
+                                    <option value="<?php echo $session; ?>"><?php echo $session; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Class</label>
+                            <select name="class_name" id="edit_class_name">
+                                <?php foreach ($classes as $class): ?>
+                                    <option value="<?php echo htmlspecialchars($class); ?>"><?php echo htmlspecialchars($class); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                     <div style="text-align: right; margin-top: 20px;">
                         <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">Cancel</button>
@@ -666,6 +690,7 @@ try {
             document.getElementById('edit_parent_guardian').value = student.parent_guardian;
             document.getElementById('edit_contact_number').value = student.contact_number;
             document.getElementById('edit_session').value = student.session_of_year;
+            document.getElementById('edit_class_name').value = student.class_name;
             document.getElementById('editModal').classList.add('active');
         }
 
@@ -684,6 +709,7 @@ try {
                     <div><strong>Parent/Guardian:</strong><br>${student.parent_guardian}</div>
                     <div><strong>Contact:</strong><br>${student.contact_number}</div>
                     <div><strong>Session:</strong><br>${student.session_of_year}</div>
+                    <div><strong>Class:</strong><br>${student.class_name}</div>
                     <div><strong>Registered On:</strong><br>${new Date(student.created_at).toLocaleDateString()}</div>
                 </div>
             `;

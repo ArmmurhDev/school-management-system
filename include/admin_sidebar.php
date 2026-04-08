@@ -34,10 +34,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Courses</span>
         </a>
         
-        <a href="#" class="menu-item">
+        <!--a href="#" class="menu-item">
             <i class="fas fa-calendar-alt"></i>
             <span class="menu-text">Attendance</span>
-        </a>
+        </a-->
         
         <a href="#" class="menu-item">
             <i class="fas fa-file-invoice-dollar"></i>

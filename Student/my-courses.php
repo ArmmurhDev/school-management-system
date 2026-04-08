@@ -1,6 +1,73 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('student');
+
+// Get current student ID from session
+$student_id = $_SESSION['user_id'];
+
+// --- AUTO-FIX: Ensure course_registrations table exists ---
+try {
+    $pdo->query("SELECT 1 FROM course_registrations LIMIT 1");
+} catch (PDOException $e) {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS course_registrations (
+        registration_id INT AUTO_INCREMENT PRIMARY KEY,
+        student_id INT NOT NULL,
+        course_id INT NOT NULL,
+        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY student_course (student_id, course_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
+$message = "";
+$is_error = false;
+
+// Handle Course Registration
+if (isset($_POST['register_course_id'])) {
+    $course_id = $_POST['register_course_id'];
+    try {
+        $stmt = $pdo->prepare("INSERT INTO course_registrations (student_id, course_id) VALUES (?, ?)");
+        if ($stmt->execute([$student_id, $course_id])) {
+            $message = "Course registered successfully!";
+        }
+    } catch (PDOException $e) {
+        $message = "Registration failed: " . $e->getMessage();
+        $is_error = true;
+    }
+}
+
+// Handle Course Dropping
+if (isset($_POST['drop_course_id'])) {
+    $course_id = $_POST['drop_course_id'];
+    try {
+        $stmt = $pdo->prepare("DELETE FROM course_registrations WHERE student_id = ? AND course_id = ?");
+        if ($stmt->execute([$student_id, $course_id])) {
+            $message = "Course dropped successfully.";
+        }
+    } catch (PDOException $e) {
+        $message = "Failed to drop course: " . $e->getMessage();
+        $is_error = true;
+    }
+}
+
+// Fetch Student Info
+$stmt = $pdo->prepare("SELECT * FROM students WHERE student_id = ?");
+$stmt->execute([$student_id]);
+$student = $stmt->fetch();
+
+// Fetch Available Courses matching student's specific class (SS1, SS2, or SS3)
+$stmt = $pdo->prepare("SELECT c.*, s.full_name as instructor_name FROM courses c LEFT JOIN staff s ON c.instructor_id = s.staff_id WHERE c.class_name = ? ORDER BY c.course_name ASC");
+$stmt->execute([$student['class_name']]);
+$all_courses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch Registered Course IDs for current student
+$stmt = $pdo->prepare("SELECT course_id FROM course_registrations WHERE student_id = ?");
+$stmt->execute([$student_id]);
+$registered_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Prepare course data for JavaScript
+$courses_json = json_encode($all_courses);
+$registered_ids_json = json_encode($registered_ids);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -165,7 +232,18 @@ checkAccess('student');
             padding: 2px 8px;
             border-radius: 20px;
             display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .course-description {
+            font-size: 0.85rem;
+            color: var(--text-light);
             margin-bottom: 15px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .course-details {
@@ -291,16 +369,21 @@ checkAccess('student');
             
             <!-- Dashboard Content -->
             <div class="dashboard-content">
+                <?php if ($message): ?>
+                    <div class="alert <?php echo $is_error ? 'alert-danger' : 'alert-success'; ?>" style="padding: 15px; border-radius: 10px; margin-bottom: 20px; background: <?php echo $is_error ? '#f8d7da' : '#d4edda'; ?>; color: <?php echo $is_error ? '#721c24' : '#155724'; ?>; border: 1px solid <?php echo $is_error ? '#f5c6cb' : '#c3e6cb'; ?>;">
+                        <?php echo $message; ?>
+                    </div>
+                <?php endif; ?>
+
                 <!-- Header Glow -->
                 <div class="header-glow">
                     <div class="student-info">
                         <div class="welcome-badge">
                             <h2><i class="fas fa-graduation-cap" style="margin-right: 12px;"></i> My Course Studio</h2>
-                            <p>Michael Johnson · <span class="student-id-badge">STU-2471-TT</span> <span>michael.j@ttschool.edu</span></p>
+                            <p><?php echo htmlspecialchars($student['full_name']); ?> · <span class="student-id-badge"><?php echo htmlspecialchars($student['admission_no']); ?></span> <span><?php echo htmlspecialchars($student['email']); ?></span></p>
                         </div>
                         <div class="stats-mini">
-                            <div class="stat-item"><div class="stat-number" id="totalCoursesStat">4</div><div class="stat-label">Enrolled</div></div>
-                            <div class="stat-item"><div class="stat-number" id="totalCreditsStat">15</div><div class="stat-label">Credits</div></div>
+                            <div class="stat-item"><div class="stat-number" id="totalCoursesStat">0</div><div class="stat-label">Enrolled</div></div>
                         </div>
                     </div>
                 </div>
@@ -327,6 +410,10 @@ checkAccess('student');
                     <!-- Cards will be injected by JS -->
                 </div>
 
+                <!-- Hidden forms for registration/dropping -->
+                <form id="regForm" method="POST" style="display:none;"><input type="hidden" name="register_course_id" id="regCourseId"></form>
+                <form id="dropForm" method="POST" style="display:none;"><input type="hidden" name="drop_course_id" id="dropCourseId"></form>
+
                 <!-- Footer -->
                 <div class="dashboard-footer">
                     <p>&copy; 2023 T&T School Management System. All rights reserved. | Student Portal v2.3</p>
@@ -344,42 +431,40 @@ checkAccess('student');
         const menuToggle = document.getElementById('menuToggle');
         
         // Sidebar Toggle
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
-        });
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+        }
         
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
-        });
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
 
         window.addEventListener('resize', function() {
             if(window.innerWidth >= 992) {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
             }
         });
 
-        // Course Data
-        const allCourses = [
-            { id: "CS101", code: "CS 101", name: "Intro to Programming", instructor: "Dr. Ethan Rivera", credits: 3, schedule: "Mon/Wed 10:30–12:00", description: "Python & logic fundamentals" },
-            { id: "CS210", code: "CS 210", name: "Data Structures", instructor: "Prof. Sophia Lin", credits: 4, schedule: "Tue/Thu 09:00–10:45", description: "Algorithms & efficiency" },
-            { id: "MATH205", code: "MATH 205", name: "Calculus II", instructor: "Dr. James Carter", credits: 4, schedule: "Mon/Wed/Fri 08:30–09:45", description: "Integrals & series" },
-            { id: "ENG210", code: "ENG 210", name: "Academic Writing", instructor: "Prof. Maya Gupta", credits: 3, schedule: "Tue/Thu 13:00–14:30", description: "Research & rhetoric" },
-            { id: "PHYS101", code: "PHYS 101", name: "Physics: Mechanics", instructor: "Dr. Oliver Chen", credits: 4, schedule: "Mon/Wed 14:00–15:45", description: "Newtonian physics" },
-            { id: "ART250", code: "ART 250", name: "Digital Design", instructor: "Elena Vasquez", credits: 3, schedule: "Fri 10:00–13:00", description: "UI/UX & creative tools" }
-        ];
+        // Dynamic Course Data from PHP
+        const allCourses = <?php echo $courses_json; ?>.map(c => ({
+            id: c.course_id,
+            code: c.course_name.split(' ').map(w => w[0]).join('').toUpperCase(), // Generate a short code
+            name: c.course_name,
+            instructor: c.instructor_name || 'Not Assigned',
+            className: c.class_name || 'All Classes',
+            credits: c.level === 'advanced' ? 4 : (c.level === 'intermediate' ? 3 : 2), // Mock units
+            schedule: c.schedule || 'TBA',
+            description: c.description || 'No description available.'
+        }));
 
-        let registeredIds = new Set(["CS101", "MATH205", "ENG210", "PHYS101"]);
-
-        function showMessage(text, isError = false) {
-            const toast = document.getElementById('toastMsg');
-            toast.textContent = text;
-            toast.style.background = isError ? 'var(--danger)' : 'var(--primary-dark)';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2400);
-        }
+        let registeredIds = new Set(<?php echo $registered_ids_json; ?>.map(id => id.toString()));
 
         function renderAll() {
             renderRegistered();
@@ -389,17 +474,23 @@ checkAccess('student');
 
         function renderRegistered() {
             const container = document.getElementById('registeredCoursesContainer');
-            const registered = allCourses.filter(c => registeredIds.has(c.id));
+            const registered = allCourses.filter(c => registeredIds.has(c.id.toString()));
             
+            if (registered.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666; background: white; border-radius: 20px;">You haven\'t registered for any courses yet.</p>';
+                return;
+            }
+
             container.innerHTML = registered.map(course => `
                 <div class="course-card">
                     <div class="card-body">
                         <div style="display:flex; justify-content: space-between; align-items:center;">
                             <span class="course-badge"><i class="fas fa-check-circle"></i> Enrolled</span>
-                            <span class="credits-chip">${course.credits} credits</span>
+                            <span class="credits-chip">${course.className}</span>
                         </div>
                         <h3 class="course-title">${course.name}</h3>
                         <span class="course-code">${course.code}</span>
+                        <p class="course-description">${course.description}</p>
                         <div class="course-details">
                             <div class="detail-row"><i class="fas fa-user-tie"></i> <span>${course.instructor}</span></div>
                             <div class="detail-row"><i class="far fa-clock"></i> <span>${course.schedule}</span></div>
@@ -414,17 +505,23 @@ checkAccess('student');
 
         function renderAvailable() {
             const container = document.getElementById('availableCoursesContainer');
-            const available = allCourses.filter(c => !registeredIds.has(c.id));
+            const available = allCourses.filter(c => !registeredIds.has(c.id.toString()));
             
+            if (available.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666; background: white; border-radius: 20px;">No available courses at the moment.</p>';
+                return;
+            }
+
             container.innerHTML = available.map(course => `
                 <div class="course-card">
                     <div class="card-body">
                         <div style="display:flex; justify-content: space-between;">
                             <span class="course-badge"><i class="fas fa-star"></i> Available</span>
-                            <span class="credits-chip">${course.credits} credits</span>
+                            <span class="credits-chip">${course.className}</span>
                         </div>
                         <h3 class="course-title">${course.name}</h3>
                         <span class="course-code">${course.code}</span>
+                        <p class="course-description">${course.description}</p>
                         <div class="course-details">
                             <div class="detail-row"><i class="fas fa-user-tie"></i> ${course.instructor}</div>
                             <div class="detail-row"><i class="far fa-calendar-alt"></i> ${course.schedule}</div>
@@ -438,23 +535,20 @@ checkAccess('student');
         }
 
         function registerCourse(id) {
-            registeredIds.add(id);
-            renderAll();
-            showMessage("Course added successfully!");
+            document.getElementById('regCourseId').value = id;
+            document.getElementById('regForm').submit();
         }
 
         function dropCourse(id) {
             if (confirm("Are you sure you want to drop this course?")) {
-                registeredIds.delete(id);
-                renderAll();
-                showMessage("Course dropped.", true);
+                document.getElementById('dropCourseId').value = id;
+                document.getElementById('dropForm').submit();
             }
         }
 
         function updateStats() {
-            const registered = allCourses.filter(c => registeredIds.has(c.id));
+            const registered = allCourses.filter(c => registeredIds.has(c.id.toString()));
             document.getElementById('totalCoursesStat').innerText = registered.length;
-            document.getElementById('totalCreditsStat').innerText = registered.reduce((sum, c) => sum + c.credits, 0);
         }
 
         renderAll();

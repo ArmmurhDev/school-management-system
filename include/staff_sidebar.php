@@ -28,7 +28,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">My Students</span>
         </a>
         
-        <a href="#" class="menu-item">
+        <a href="attendance.php" class="menu-item">
             <i class="fas fa-calendar-check"></i>
             <span class="menu-text">Attendance</span>
         </a>

@@ -1,6 +1,79 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('admin');
+
+$success_message = "";
+$error_message = "";
+
+// Handle Delete Request
+if (isset($_POST['delete_course_id'])) {
+    $course_id = filter_input(INPUT_POST, 'delete_course_id', FILTER_SANITIZE_NUMBER_INT);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM courses WHERE course_id = ?");
+        if ($stmt->execute([$course_id])) {
+            $success_message = "Course deleted successfully!";
+        } else {
+            $error_message = "Failed to delete course.";
+        }
+    } catch (PDOException $e) {
+        $error_message = "Error: " . $e->getMessage();
+    }
+}
+
+// Handle Update Request
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_course'])) {
+    $course_id = $_POST['course_id'];
+    $course_name = $_POST['course_name'];
+    $description = $_POST['description'];
+    $level = $_POST['level'];
+    $class_name = $_POST['class_name'];
+    $instructor_id = $_POST['instructor_id'];
+    $schedule = $_POST['schedule'];
+
+    try {
+        $stmt = $pdo->prepare("UPDATE courses SET course_name=?, description=?, level=?, class_name=?, instructor_id=?, schedule=? WHERE course_id=?");
+        if ($stmt->execute([$course_name, $description, $level, $class_name, $instructor_id, $schedule, $course_id])) {
+            $success_message = "Course updated successfully!";
+        } else {
+            $error_message = "Failed to update course.";
+        }
+    } catch (PDOException $e) {
+        $error_message = "Error: " . $e->getMessage();
+    }
+}
+
+// Fetch Courses
+$courses = [];
+try {
+    $stmt = $pdo->query("SELECT c.*, s.full_name as instructor_name, s.image as instructor_image FROM courses c LEFT JOIN staff s ON c.instructor_id = s.staff_id ORDER BY c.created_at DESC");
+    $courses = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $error_message = "Error fetching courses: " . $e->getMessage();
+}
+
+// Fetch Staff for Edit Modal
+$instructors = [];
+try {
+    $stmt = $pdo->query("SELECT staff_id, full_name FROM staff WHERE position LIKE '%Teacher%' OR position LIKE '%Staff%' ORDER BY full_name ASC");
+    $instructors = $stmt->fetchAll();
+} catch (PDOException $e) {}
+
+// Fetch Classes for Edit Modal
+$classes = [];
+if (function_exists('getClasses')) {
+    $classes = getClasses($pdo);
+} else {
+    // Fallback if helper not found
+    $classes = ['SS1', 'SS2', 'SS3'];
+}
+
+// Fetch Subjects for Edit Modal
+$subjects_list = [];
+try {
+    $stmt = $pdo->query("SELECT subject_name FROM subjects ORDER BY subject_name ASC");
+    $subjects_list = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -824,66 +897,82 @@ checkAccess('admin');
                 <div class="course-header">
                     <h2>All Courses</h2>
                     <div class="course-actions">
-                        <button class="btn btn-secondary" id="filterBtn">
-                            <i class="fas fa-filter"></i> Filter Courses
-                        </button>
-                        <button class="btn btn-primary" id="addCourseBtn">
+                        <a href="add_new_courses.php" class="btn btn-primary">
                             <i class="fas fa-plus-circle"></i> Add New Course
-                        </button>
+                        </a>
                     </div>
                 </div>
-                
-                <!-- Filters Bar -->
-                <div class="filters-bar" id="filtersBar">
-                    <div class="filter-group">
-                        <label for="courseLevel">Course Level</label>
-                        <select id="courseLevel">
-                            <option value="">All Levels</option>
-                            <option value="beginner">Beginner</option>
-                            <option value="intermediate">Intermediate</option>
-                            <option value="advanced">Advanced</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="courseStatus">Status</label>
-                        <select id="courseStatus">
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="upcoming">Upcoming</option>
-                            <option value="ended">Ended</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="courseInstructor">Instructor</label>
-                        <select id="courseInstructor">
-                            <option value="">All Instructors</option>
-                            <option value="dr-smith">Dr. Robert Smith</option>
-                            <option value="ms-johnson">Ms. Emily Johnson</option>
-                            <option value="mr-chen">Mr. David Chen</option>
-                        </select>
-                    </div>
-                    
-                    <div class="filter-group">
-                        <label for="searchCourse">Search</label>
-                        <input type="text" id="searchCourse" placeholder="Search course name or code...">
-                    </div>
-                </div>
+
+                <?php if ($success_message): ?>
+                    <div class="alert alert-success" style="padding: 15px; background: #d4edda; color: #155724; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb;"><?php echo $success_message; ?></div>
+                <?php endif; ?>
+                <?php if ($error_message): ?>
+                    <div class="alert alert-danger" style="padding: 15px; background: #f8d7da; color: #721c24; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;"><?php echo $error_message; ?></div>
+                <?php endif; ?>
                 
                 <!-- Courses Grid -->
                 <div class="courses-grid" id="coursesGrid">
-                    <!-- Course cards will be dynamically generated -->
-                </div>
-                
-                <!-- Empty State (hidden by default) -->
-                <div class="empty-state" id="emptyState" style="display: none;">
-                    <i class="fas fa-book-open"></i>
-                    <h3>No Courses Found</h3>
-                    <p>There are no courses matching your current filters. Try adjusting your search criteria or add a new course to get started.</p>
-                    <button class="btn btn-primary" id="addCourseEmptyBtn">
-                        <i class="fas fa-plus-circle"></i> Add New Course
-                    </button>
+                    <?php if (empty($courses)): ?>
+                        <div class="empty-state" id="emptyState" style="grid-column: 1 / -1;">
+                            <i class="fas fa-book-open"></i>
+                            <h3>No Courses Found</h3>
+                            <p>There are no courses registered yet. Click the button above to add a new course.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($courses as $course): ?>
+                            <div class="course-card">
+                                <div class="course-card-header">
+                                    <div class="course-code"><?php echo htmlspecialchars($course['course_name']); ?></div>
+                                    <div class="course-status status-active"><?php echo ucfirst(htmlspecialchars($course['level'])); ?></div>
+                                </div>
+                                
+                                <div class="course-card-body">
+                                    <h3 class="course-title"><?php echo htmlspecialchars($course['course_name']); ?></h3>
+                                    <p class="course-description"><?php echo htmlspecialchars($course['description']); ?></p>
+                                    
+                                    <div class="course-details">
+                                        <div class="detail-item">
+                                            <i class="fas fa-graduation-cap"></i>
+                                            <span>Class: <?php echo htmlspecialchars($course['class_name']); ?></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <i class="fas fa-clock"></i>
+                                            <span><?php echo htmlspecialchars($course['schedule']); ?></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="course-instructor">
+                                        <div class="instructor-avatar">
+                                            <?php if (!empty($course['instructor_image'])): ?>
+                                                <img src="../assets/images/staff/<?php echo $course['instructor_image']; ?>" alt="Instructor">
+                                            <?php else: ?>
+                                                <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($course['instructor_name']); ?>&background=random" alt="Instructor">
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="instructor-info">
+                                            <h5><?php echo htmlspecialchars($course['instructor_name'] ?? 'Not Assigned'); ?></h5>
+                                            <p>Course Instructor</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="course-card-footer">
+                                    <div class="course-enrollment">Active Course</div>
+                                    <div class="course-actions-btns">
+                                        <button class="action-btn view" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($course)); ?>)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <form method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this course?');">
+                                            <input type="hidden" name="delete_course_id" value="<?php echo $course['course_id']; ?>">
+                                            <button type="submit" class="action-btn delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
                 
                 <!-- Footer -->
@@ -893,38 +982,38 @@ checkAccess('admin');
             </div>
         </div>
         
-        <!-- Add/Edit Course Modal -->
+        <!-- View/Edit Course Modal -->
         <div class="modal" id="courseModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 id="modalTitle">Add New Course</h3>
+                    <h3 id="modalTitle">View / Edit Course</h3>
                     <button class="close-modal" id="closeModal">&times;</button>
                 </div>
                 
                 <div class="modal-body">
-                    <form id="courseForm">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="courseCode">Course Code *</label>
-                                <input type="text" id="courseCode" required placeholder="e.g. MATH-101">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="courseName">Course Name *</label>
-                                <input type="text" id="courseName" required placeholder="e.g. Advanced Mathematics">
-                            </div>
+                    <form id="courseForm" method="POST">
+                        <input type="hidden" name="update_course" value="1">
+                        <input type="hidden" name="course_id" id="edit_course_id">
+                        
+                        <div class="form-group">
+                            <label>Subject Name *</label>
+                            <select name="course_name" id="edit_course_name" required>
+                                <option value="">Select Subject</option>
+                                <?php foreach ($subjects_list as $subject): ?>
+                                    <option value="<?php echo htmlspecialchars($subject); ?>"><?php echo htmlspecialchars($subject); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         
                         <div class="form-group">
-                            <label for="courseDescription">Course Description *</label>
-                            <textarea id="courseDescription" required placeholder="Provide a detailed description of the course..."></textarea>
+                            <label>Description</label>
+                            <textarea name="description" id="edit_description" placeholder="Provide a detailed description of the course..."></textarea>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="courseLevel">Course Level *</label>
-                                <select id="modalCourseLevel" required>
-                                    <option value="">Select Level</option>
+                                <label>Level *</label>
+                                <select name="level" id="edit_level" required>
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
@@ -932,605 +1021,91 @@ checkAccess('admin');
                             </div>
                             
                             <div class="form-group">
-                                <label for="courseCredits">Credits *</label>
-                                <select id="courseCredits" required>
-                                    <option value="">Select Credits</option>
-                                    <option value="1">1 Credit</option>
-                                    <option value="2">2 Credits</option>
-                                    <option value="3">3 Credits</option>
-                                    <option value="4">4 Credits</option>
-                                    <option value="5">5 Credits</option>
+                                <label>Class *</label>
+                                <select name="class_name" id="edit_class_name" required>
+                                    <option value="">Select Class</option>
+                                    <?php foreach ($classes as $c): ?>
+                                        <option value="<?php echo $c; ?>"><?php echo $c; ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="courseInstructor">Instructor *</label>
-                                <select id="modalCourseInstructor" required>
+                                <label>Instructor *</label>
+                                <select name="instructor_id" id="edit_instructor_id" required>
                                     <option value="">Select Instructor</option>
-                                    <option value="dr-smith">Dr. Robert Smith</option>
-                                    <option value="ms-johnson">Ms. Emily Johnson</option>
-                                    <option value="mr-chen">Mr. David Chen</option>
-                                    <option value="dr-williams">Dr. Sarah Williams</option>
+                                    <?php foreach ($instructors as $ins): ?>
+                                        <option value="<?php echo $ins['staff_id']; ?>"><?php echo $ins['full_name']; ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             
                             <div class="form-group">
-                                <label for="courseSchedule">Schedule *</label>
-                                <input type="text" id="courseSchedule" required placeholder="e.g. Mon/Wed/Fri 10:00-11:30 AM">
+                                <label>Schedule *</label>
+                                <input type="text" name="schedule" id="edit_schedule" required placeholder="e.g. Mon/Wed/Fri 10:00-11:30 AM">
                             </div>
                         </div>
                         
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="courseStartDate">Start Date *</label>
-                                <input type="date" id="courseStartDate" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="courseEndDate">End Date *</label>
-                                <input type="date" id="courseEndDate" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="courseCapacity">Student Capacity *</label>
-                                <input type="number" id="courseCapacity" required min="1" max="100" placeholder="e.g. 30">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="courseStatus">Status *</label>
-                                <select id="modalCourseStatus" required>
-                                    <option value="">Select Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="upcoming">Upcoming</option>
-                                    <option value="ended">Ended</option>
-                                </select>
-                            </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button type="button" class="btn btn-secondary" onclick="closeModalFunc()">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
-                </div>
-                
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
-                    <button class="btn btn-primary" id="saveCourseBtn">Save Course</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Sample course data
-        const sampleCourses = [
-            {
-                id: 1,
-                code: "MATH-101",
-                name: "Advanced Mathematics",
-                description: "Comprehensive course covering advanced mathematical concepts including calculus, linear algebra, and differential equations.",
-                level: "advanced",
-                credits: 4,
-                instructor: "Dr. Robert Smith",
-                instructorId: "dr-smith",
-                schedule: "Mon/Wed/Fri 10:00-11:30 AM",
-                startDate: "2023-09-01",
-                endDate: "2023-12-15",
-                capacity: 35,
-                enrolled: 32,
-                status: "active"
-            },
-            {
-                id: 2,
-                code: "SCI-201",
-                name: "Physics Fundamentals",
-                description: "Introduction to classical mechanics, thermodynamics, and electromagnetism with practical laboratory sessions.",
-                level: "intermediate",
-                credits: 3,
-                instructor: "Ms. Emily Johnson",
-                instructorId: "ms-johnson",
-                schedule: "Tue/Thu 1:00-2:30 PM",
-                startDate: "2023-09-05",
-                endDate: "2023-12-20",
-                capacity: 30,
-                enrolled: 28,
-                status: "active"
-            },
-            {
-                id: 3,
-                code: "CS-301",
-                name: "Computer Science Principles",
-                description: "Foundational course in computer science covering algorithms, data structures, and programming concepts.",
-                level: "beginner",
-                credits: 3,
-                instructor: "Mr. David Chen",
-                instructorId: "mr-chen",
-                schedule: "Mon/Wed 2:00-3:30 PM",
-                startDate: "2023-10-01",
-                endDate: "2024-01-15",
-                capacity: 40,
-                enrolled: 35,
-                status: "upcoming"
-            },
-            {
-                id: 4,
-                code: "ENG-102",
-                name: "Literature & Composition",
-                description: "Study of literary works from various periods with emphasis on critical analysis and writing skills development.",
-                level: "intermediate",
-                credits: 3,
-                instructor: "Dr. Sarah Williams",
-                instructorId: "dr-williams",
-                schedule: "Tue/Thu 9:00-10:30 AM",
-                startDate: "2023-08-15",
-                endDate: "2023-11-30",
-                capacity: 25,
-                enrolled: 25,
-                status: "ended"
-            },
-            {
-                id: 5,
-                code: "BIO-202",
-                name: "Advanced Biology",
-                description: "In-depth study of cellular biology, genetics, and molecular biology with laboratory experiments.",
-                level: "advanced",
-                credits: 4,
-                instructor: "Dr. Robert Smith",
-                instructorId: "dr-smith",
-                schedule: "Mon/Wed/Fri 1:00-2:30 PM",
-                startDate: "2023-09-10",
-                endDate: "2023-12-18",
-                capacity: 30,
-                enrolled: 30,
-                status: "active"
-            },
-            {
-                id: 6,
-                code: "ART-103",
-                name: "Visual Arts Studio",
-                description: "Practical course focusing on drawing, painting, and design principles for creative expression.",
-                level: "beginner",
-                credits: 2,
-                instructor: "Ms. Emily Johnson",
-                instructorId: "ms-johnson",
-                schedule: "Fri 3:00-5:30 PM",
-                startDate: "2023-10-15",
-                endDate: "2024-02-10",
-                capacity: 20,
-                enrolled: 15,
-                status: "upcoming"
-            }
-        ];
-        
         // DOM Elements
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const menuToggle = document.getElementById('menuToggle');
-        const coursesGrid = document.getElementById('coursesGrid');
-        const emptyState = document.getElementById('emptyState');
         const courseModal = document.getElementById('courseModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const courseForm = document.getElementById('courseForm');
         const closeModal = document.getElementById('closeModal');
-        const cancelModalBtn = document.getElementById('cancelModalBtn');
-        const saveCourseBtn = document.getElementById('saveCourseBtn');
-        const addCourseBtn = document.getElementById('addCourseBtn');
-        const addCourseEmptyBtn = document.getElementById('addCourseEmptyBtn');
-        const filterBtn = document.getElementById('filterBtn');
-        const filtersBar = document.getElementById('filtersBar');
         
-        // Filter elements
-        const courseLevelFilter = document.getElementById('courseLevel');
-        const courseStatusFilter = document.getElementById('courseStatus');
-        const courseInstructorFilter = document.getElementById('courseInstructor');
-        const searchCourseFilter = document.getElementById('searchCourse');
-        
-        // Form elements
-        const courseCodeInput = document.getElementById('courseCode');
-        const courseNameInput = document.getElementById('courseName');
-        const courseDescriptionInput = document.getElementById('courseDescription');
-        const modalCourseLevelInput = document.getElementById('modalCourseLevel');
-        const courseCreditsInput = document.getElementById('courseCredits');
-        const modalCourseInstructorInput = document.getElementById('modalCourseInstructor');
-        const courseScheduleInput = document.getElementById('courseSchedule');
-        const courseStartDateInput = document.getElementById('courseStartDate');
-        const courseEndDateInput = document.getElementById('courseEndDate');
-        const courseCapacityInput = document.getElementById('courseCapacity');
-        const modalCourseStatusInput = document.getElementById('modalCourseStatus');
-        
-        // State variables
-        let courses = [...sampleCourses];
-        let currentEditId = null;
-        let filtersVisible = true;
-        
-        // Set default dates for the form
-        const today = new Date();
-        const nextMonth = new Date();
-        nextMonth.setMonth(today.getMonth() + 1);
-        
-        courseStartDateInput.valueAsDate = today;
-        courseEndDateInput.valueAsDate = nextMonth;
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            renderCourses();
-            setupEventListeners();
-        });
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Mobile sidebar toggle
+        // Mobile sidebar toggle
+        if (menuToggle) {
             menuToggle.addEventListener('click', () => {
                 sidebar.classList.toggle('active');
                 overlay.classList.toggle('active');
             });
-            
+        }
+        
+        if (overlay) {
             overlay.addEventListener('click', () => {
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
             });
-            
-            // Modal controls
-            addCourseBtn.addEventListener('click', () => openModal('add'));
-            addCourseEmptyBtn.addEventListener('click', () => openModal('add'));
-            
+        }
+
+        if (closeModal) {
             closeModal.addEventListener('click', closeModalFunc);
-            cancelModalBtn.addEventListener('click', closeModalFunc);
-            
-            // Save course
-            saveCourseBtn.addEventListener('click', saveCourse);
-            
-            // Filter toggle
-            filterBtn.addEventListener('click', () => {
-                filtersVisible = !filtersVisible;
-                filtersBar.style.display = filtersVisible ? 'flex' : 'none';
-                filterBtn.innerHTML = filtersVisible 
-                    ? '<i class="fas fa-filter"></i> Hide Filters' 
-                    : '<i class="fas fa-filter"></i> Show Filters';
-            });
-            
-            // Filter events
-            courseLevelFilter.addEventListener('change', applyFilters);
-            courseStatusFilter.addEventListener('change', applyFilters);
-            courseInstructorFilter.addEventListener('change', applyFilters);
-            searchCourseFilter.addEventListener('input', applyFilters);
-            
-            // Close sidebar when clicking on a menu item (for mobile)
-            document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    if (window.innerWidth < 992) {
-                        sidebar.classList.remove('active');
-                        overlay.classList.remove('active');
-                    }
-                });
-            });
         }
         
-        // Render courses to the grid
-        function renderCourses(filteredCourses = courses) {
-            coursesGrid.innerHTML = '';
-            
-            if (filteredCourses.length === 0) {
-                coursesGrid.style.display = 'none';
-                emptyState.style.display = 'block';
-                return;
-            }
-            
-            coursesGrid.style.display = 'grid';
-            emptyState.style.display = 'none';
-            
-            filteredCourses.forEach(course => {
-                const courseCard = createCourseCard(course);
-                coursesGrid.appendChild(courseCard);
-            });
+        function closeModalFunc() {
+            courseModal.classList.remove('active');
         }
         
-        // Create a course card element
-        function createCourseCard(course) {
-            const card = document.createElement('div');
-            card.className = 'course-card';
-            card.dataset.id = course.id;
-            
-            // Get status class
-            let statusClass = '';
-            let statusText = '';
-            switch(course.status) {
-                case 'active':
-                    statusClass = 'status-active';
-                    statusText = 'Active';
-                    break;
-                case 'upcoming':
-                    statusClass = 'status-upcoming';
-                    statusText = 'Upcoming';
-                    break;
-                case 'ended':
-                    statusClass = 'status-ended';
-                    statusText = 'Ended';
-                    break;
-            }
-            
-            // Get instructor avatar
-            const instructorAvatar = getInstructorAvatar(course.instructorId);
-            
-            card.innerHTML = `
-                <div class="course-card-header">
-                    <div class="course-code">${course.code}</div>
-                    <div class="course-status ${statusClass}">${statusText}</div>
-                </div>
-                
-                <div class="course-card-body">
-                    <h3 class="course-title">${course.name}</h3>
-                    <p class="course-description">${course.description}</p>
-                    
-                    <div class="course-details">
-                        <div class="detail-item">
-                            <i class="fas fa-layer-group"></i>
-                            <span>Level: ${course.level.charAt(0).toUpperCase() + course.level.slice(1)}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-star"></i>
-                            <span>Credits: ${course.credits}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>${course.schedule}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-users"></i>
-                            <span>${course.enrolled}/${course.capacity} Students</span>
-                        </div>
-                    </div>
-                    
-                    <div class="course-instructor">
-                        <div class="instructor-avatar">
-                            <img src="${instructorAvatar}" alt="${course.instructor}">
-                        </div>
-                        <div class="instructor-info">
-                            <h5>${course.instructor}</h5>
-                            <p>Course Instructor</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="course-card-footer">
-                    <div class="course-enrollment">${course.enrolled} Enrolled</div>
-                    <div class="course-actions-btns">
-                        <button class="action-btn view" data-id="${course.id}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="action-btn edit" data-id="${course.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="action-btn delete" data-id="${course.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Add event listeners to action buttons
-            const viewBtn = card.querySelector('.action-btn.view');
-            const editBtn = card.querySelector('.action-btn.edit');
-            const deleteBtn = card.querySelector('.action-btn.delete');
-            
-            viewBtn.addEventListener('click', () => viewCourse(course.id));
-            editBtn.addEventListener('click', () => openModal('edit', course.id));
-            deleteBtn.addEventListener('click', () => deleteCourse(course.id));
-            
-            return card;
-        }
-        
-        // Get instructor avatar based on ID
-        function getInstructorAvatar(instructorId) {
-            const avatars = {
-                'dr-smith': 'https://randomuser.me/api/portraits/men/45.jpg',
-                'ms-johnson': 'https://randomuser.me/api/portraits/women/65.jpg',
-                'mr-chen': 'https://randomuser.me/api/portraits/men/32.jpg',
-                'dr-williams': 'https://randomuser.me/api/portraits/women/32.jpg'
-            };
-            
-            return avatars[instructorId] || 'https://randomuser.me/api/portraits/men/1.jpg';
-        }
-        
-        // Apply filters to courses
-        function applyFilters() {
-            const levelFilter = courseLevelFilter.value;
-            const statusFilter = courseStatusFilter.value;
-            const instructorFilter = courseInstructorFilter.value;
-            const searchFilter = searchCourseFilter.value.toLowerCase();
-            
-            const filteredCourses = courses.filter(course => {
-                // Level filter
-                if (levelFilter && course.level !== levelFilter) return false;
-                
-                // Status filter
-                if (statusFilter && course.status !== statusFilter) return false;
-                
-                // Instructor filter
-                if (instructorFilter && course.instructorId !== instructorFilter) return false;
-                
-                // Search filter
-                if (searchFilter) {
-                    const searchInCode = course.code.toLowerCase().includes(searchFilter);
-                    const searchInName = course.name.toLowerCase().includes(searchFilter);
-                    const searchInDesc = course.description.toLowerCase().includes(searchFilter);
-                    
-                    if (!searchInCode && !searchInName && !searchInDesc) return false;
-                }
-                
-                return true;
-            });
-            
-            renderCourses(filteredCourses);
-        }
-        
-        // Open modal for adding/editing course
-        function openModal(mode, courseId = null) {
-            if (mode === 'add') {
-                modalTitle.textContent = 'Add New Course';
-                currentEditId = null;
-                resetForm();
-                
-                // Set default dates
-                const today = new Date();
-                const nextMonth = new Date();
-                nextMonth.setMonth(today.getMonth() + 1);
-                
-                courseStartDateInput.valueAsDate = today;
-                courseEndDateInput.valueAsDate = nextMonth;
-            } else if (mode === 'edit' && courseId) {
-                modalTitle.textContent = 'Edit Course';
-                currentEditId = courseId;
-                populateForm(courseId);
-            }
+        function openEditModal(course) {
+            document.getElementById('edit_course_id').value = course.course_id;
+            document.getElementById('edit_course_name').value = course.course_name;
+            document.getElementById('edit_description').value = course.description;
+            document.getElementById('edit_level').value = course.level;
+            document.getElementById('edit_class_name').value = course.class_name;
+            document.getElementById('edit_instructor_id').value = course.instructor_id;
+            document.getElementById('edit_schedule').value = course.schedule;
             
             courseModal.classList.add('active');
         }
-        
-        // Close modal
-        function closeModalFunc() {
-            courseModal.classList.remove('active');
-            resetForm();
-            currentEditId = null;
-        }
-        
-        // Reset form
-        function resetForm() {
-            courseForm.reset();
-            
-            // Reset dates to today and next month
-            const today = new Date();
-            const nextMonth = new Date();
-            nextMonth.setMonth(today.getMonth() + 1);
-            
-            courseStartDateInput.valueAsDate = today;
-            courseEndDateInput.valueAsDate = nextMonth;
-        }
-        
-        // Populate form with course data
-        function populateForm(courseId) {
-            const course = courses.find(c => c.id == courseId);
-            if (!course) return;
-            
-            courseCodeInput.value = course.code;
-            courseNameInput.value = course.name;
-            courseDescriptionInput.value = course.description;
-            modalCourseLevelInput.value = course.level;
-            courseCreditsInput.value = course.credits;
-            modalCourseInstructorInput.value = course.instructorId;
-            courseScheduleInput.value = course.schedule;
-            courseStartDateInput.value = course.startDate;
-            courseEndDateInput.value = course.endDate;
-            courseCapacityInput.value = course.capacity;
-            modalCourseStatusInput.value = course.status;
-        }
-        
-        // Save course (add or update)
-        function saveCourse() {
-            // Validate form
-            if (!courseForm.checkValidity()) {
-                alert('Please fill in all required fields correctly.');
-                return;
-            }
-            
-            // Validate dates
-            const startDate = new Date(courseStartDateInput.value);
-            const endDate = new Date(courseEndDateInput.value);
-            
-            if (endDate <= startDate) {
-                alert('End date must be after start date.');
-                return;
-            }
-            
-            if (currentEditId) {
-                // Update existing course
-                const index = courses.findIndex(c => c.id == currentEditId);
-                if (index !== -1) {
-                    courses[index] = {
-                        ...courses[index],
-                        code: courseCodeInput.value,
-                        name: courseNameInput.value,
-                        description: courseDescriptionInput.value,
-                        level: modalCourseLevelInput.value,
-                        credits: parseInt(courseCreditsInput.value),
-                        instructorId: modalCourseInstructorInput.value,
-                        instructor: getInstructorName(modalCourseInstructorInput.value),
-                        schedule: courseScheduleInput.value,
-                        startDate: courseStartDateInput.value,
-                        endDate: courseEndDateInput.value,
-                        capacity: parseInt(courseCapacityInput.value),
-                        status: modalCourseStatusInput.value
-                    };
-                }
-                
-                alert('Course updated successfully!');
-            } else {
-                // Add new course
-                const newCourse = {
-                    id: courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1,
-                    code: courseCodeInput.value,
-                    name: courseNameInput.value,
-                    description: courseDescriptionInput.value,
-                    level: modalCourseLevelInput.value,
-                    credits: parseInt(courseCreditsInput.value),
-                    instructorId: modalCourseInstructorInput.value,
-                    instructor: getInstructorName(modalCourseInstructorInput.value),
-                    schedule: courseScheduleInput.value,
-                    startDate: courseStartDateInput.value,
-                    endDate: courseEndDateInput.value,
-                    capacity: parseInt(courseCapacityInput.value),
-                    enrolled: 0,
-                    status: modalCourseStatusInput.value
-                };
-                
-                courses.unshift(newCourse);
-                alert('Course added successfully!');
-            }
-            
-            // Update display and close modal
-            applyFilters();
-            closeModalFunc();
-        }
-        
-        // Get instructor name from ID
-        function getInstructorName(instructorId) {
-            const instructorNames = {
-                'dr-smith': 'Dr. Robert Smith',
-                'ms-johnson': 'Ms. Emily Johnson',
-                'mr-chen': 'Mr. David Chen',
-                'dr-williams': 'Dr. Sarah Williams'
-            };
-            
-            return instructorNames[instructorId] || 'Unknown Instructor';
-        }
-        
-        // View course details
-        function viewCourse(courseId) {
-            const course = courses.find(c => c.id == courseId);
-            if (!course) return;
-            
-            alert(`Viewing details for: ${course.name}\n\nCode: ${course.code}\nDescription: ${course.description}\nInstructor: ${course.instructor}\nSchedule: ${course.schedule}\nStatus: ${course.status}\nEnrolled: ${course.enrolled}/${course.capacity} students`);
-        }
-        
-        // Delete course
-        function deleteCourse(courseId) {
-            if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
-                return;
-            }
-            
-            const courseName = courses.find(c => c.id == courseId)?.name || 'Unknown Course';
-            
-            courses = courses.filter(c => c.id != courseId);
-            applyFilters();
-            
-            alert(`Course "${courseName}" has been deleted.`);
-        }
-        
+
         // Handle window resize
         window.addEventListener('resize', function() {
             if(window.innerWidth >= 992) {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
+                if (sidebar) sidebar.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
             }
         });
     </script>
