@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>T&T School – Student Payment Portal</title>
+    <title>T&T School – Admin Fee Payment Overview</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -20,9 +20,8 @@
             color: #1e293b;
         }
 
-        /* main container */
-        .payment-container {
-            max-width: 1280px;
+        .dashboard-container {
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 32px;
@@ -31,7 +30,7 @@
         }
 
         /* header */
-        .portal-header {
+        .top-bar {
             background: linear-gradient(98deg, #0b2b44 0%, #0a4c6e 100%);
             padding: 28px 32px;
             color: white;
@@ -41,17 +40,16 @@
             gap: 15px;
             align-items: center;
         }
-
-        .logo h1 {
+        .logo-area h1 {
             font-size: 1.8rem;
             font-weight: 700;
         }
-        .logo p {
+        .logo-area p {
             font-size: 0.85rem;
             opacity: 0.85;
             margin-top: 5px;
         }
-        .student-badge {
+        .admin-badge {
             background: rgba(255,255,255,0.15);
             backdrop-filter: blur(4px);
             padding: 10px 24px;
@@ -62,132 +60,80 @@
             font-weight: 500;
         }
 
-        /* main content */
+        /* content */
         .main-content {
-            padding: 40px;
+            padding: 32px;
         }
 
-        /* two columns */
-        .payment-grid {
+        /* summary cards */
+        .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
             margin-bottom: 32px;
         }
-
-        /* card style */
-        .card {
-            background: #ffffff;
+        .stat-card {
+            background: #f8fcff;
             border-radius: 24px;
-            box-shadow: 0 8px 20px rgba(0, 51, 102, 0.06);
+            padding: 24px 20px;
+            text-align: center;
             border: 1px solid #e2edf7;
-            overflow: hidden;
             transition: 0.2s;
         }
-
-        .card-header {
-            padding: 20px 28px;
-            border-bottom: 1px solid #eef2ff;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .card-header i {
-            font-size: 1.6rem;
+        .stat-card i {
+            font-size: 2rem;
             color: #2c7da0;
+            margin-bottom: 12px;
         }
-        .card-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #0b2b44;
-        }
-        .card-body {
-            padding: 28px;
-        }
-
-        /* bank details highlight */
-        .bank-details {
-            background: #f0f8ff;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-        .bank-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px dashed #cde3f0;
-        }
-        .bank-row:last-child {
-            border-bottom: none;
-        }
-        .bank-label {
-            font-weight: 600;
-            color: #1e4a6b;
-        }
-        .bank-value {
+        .stat-number {
+            font-size: 2rem;
             font-weight: 700;
             color: #0b2b44;
-            letter-spacing: 0.3px;
         }
-        .copy-icon {
-            margin-left: 10px;
-            cursor: pointer;
-            color: #2c7da0;
+        .stat-label {
             font-size: 0.9rem;
-        }
-        .copy-icon:hover {
-            color: #0f5b7a;
+            color: #4a6f8a;
         }
 
-        /* payment form */
-        .form-group {
-            margin-bottom: 20px;
+        /* filters */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
         }
-        label {
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: block;
-            margin-bottom: 8px;
-            color: #1e4a6b;
+        .filter-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 16px;
+        .filter-group select, .filter-group input {
+            padding: 10px 16px;
+            border-radius: 40px;
             border: 1px solid #cbdde9;
-            border-radius: 16px;
+            background: white;
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            background: #fefefe;
-            transition: 0.2s;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #2c7da0;
-            box-shadow: 0 0 0 3px rgba(44,125,160,0.15);
         }
         .btn {
             border: none;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 40px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         .btn-primary {
             background: linear-gradient(105deg, #0b2b44, #1b6b8f);
             color: white;
-            box-shadow: 0 4px 8px rgba(0,51,102,0.1);
-            width: 100%;
-            justify-content: center;
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            background: linear-gradient(105deg, #124263, #227d9e);
         }
         .btn-outline {
             border: 1px solid #2c7da0;
@@ -195,13 +141,11 @@
             color: #1e4a6b;
         }
 
-        /* recent payments table */
-        .recent-payments {
-            margin-top: 32px;
-        }
+        /* table */
         .table-wrapper {
             overflow-x: auto;
             border-radius: 20px;
+            border: 1px solid #e2edf7;
         }
         .payments-table {
             width: 100%;
@@ -217,297 +161,360 @@
         .payments-table td {
             padding: 14px 12px;
             border-bottom: 1px solid #e9eff5;
+            vertical-align: middle;
         }
-        .status-badge {
+        .status-paid {
             background: #e6f4ea;
             color: #2e7d32;
             padding: 4px 12px;
             border-radius: 30px;
-            font-weight: 500;
-            font-size: 0.75rem;
+            font-weight: 600;
             display: inline-block;
         }
-        .status-pending {
-            background: #fff3e0;
-            color: #b45f06;
+        .status-unpaid {
+            background: #fff0f0;
+            color: #c0392b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .action-icons i {
+            font-size: 1.2rem;
+            margin: 0 6px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 30px;
+            transition: 0.1s;
+        }
+        .action-icons .fa-check-circle {
+            color: #2e7d32;
+        }
+        .action-icons .fa-edit {
+            color: #2c7da0;
+        }
+        .action-icons i:hover {
+            background: #eef2ff;
         }
 
-        /* responsive */
-        @media (max-width: 900px) {
-            .payment-grid {
-                grid-template-columns: 1fr;
-            }
-            .main-content {
-                padding: 24px;
-            }
+        /* modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        @media (max-width: 600px) {
-            .portal-header {
-                flex-direction: column;
-                text-align: center;
-            }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 32px;
+            padding: 28px;
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid #cbdde9;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
         }
 
-        .footer-note {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            color: #5b7f95;
-            border-top: 1px solid #e2edf7;
-            padding-top: 24px;
+        @media (max-width: 700px) {
+            .main-content { padding: 20px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
-<div class="payment-container">
-    <div class="portal-header">
-        <div class="logo">
-            <h1><i class="fas fa-graduation-cap"></i> T&T School</h1>
-            <p>Student Payment Portal</p>
+<div class="dashboard-container">
+    <div class="top-bar">
+        <div class="logo-area">
+            <h1><i class="fas fa-chalkboard-user"></i> T&T School</h1>
+            <p>Admin – Fee Payment Overview</p>
         </div>
-        <div class="student-badge">
-            <i class="fas fa-user-circle"></i>
-            <span>Michael Johnson | Grade 10A</span>
+        <div class="admin-badge">
+            <i class="fas fa-user-shield"></i>
+            <span>Admin: Said Umar</span>
         </div>
     </div>
 
     <div class="main-content">
-        <div class="payment-grid">
-            <!-- LEFT: Bank account details -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-university"></i>
-                    <h2>School Account Details</h2>
-                </div>
-                <div class="card-body">
-                    <div class="bank-details">
-                        <div class="bank-row">
-                            <span class="bank-label"><i class="fas fa-building"></i> Bank Name</span>
-                            <span class="bank-value">Access Bank Plc</span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label"><i class="fas fa-hashtag"></i> Account Number</span>
-                            <span class="bank-value">1657584637 
-                                <i class="fas fa-copy copy-icon" data-copy="1657584637" title="Copy account number"></i>
-                            </span>
-                        </div>
-                        <div class="bank-row">
-                            <span class="bank-label"><i class="fas fa-user-tie"></i> Account Name</span>
-                            <span class="bank-value">Saidu Umar 
-                                <i class="fas fa-copy copy-icon" data-copy="Saidu Umar" title="Copy account name"></i>
-                            </span>
-                        </div>
-                    </div>
-                    <div style="background: #eef2ff; border-radius: 16px; padding: 16px; margin-top: 12px;">
-                        <i class="fas fa-info-circle" style="color: #2c7da0;"></i> 
-                        <span style="font-size: 0.9rem;">Please use your Student ID as payment reference. After transfer, submit the form below to notify the finance office.</span>
-                    </div>
-                </div>
-            </div>
+        <!-- stats -->
+        <div class="stats-grid" id="statsGrid"></div>
 
-            <!-- RIGHT: Payment submission form -->
-            <div class="card">
-                <div class="card-header">
-                    <i class="fas fa-credit-card"></i>
-                    <h2>Submit Payment Details</h2>
-                </div>
-                <div class="card-body">
-                    <form id="paymentForm">
-                        <div class="form-group">
-                            <label><i class="fas fa-user"></i> Full Name *</label>
-                            <input type="text" id="studentName" placeholder="e.g. Michael Johnson" required>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-id-card"></i> Student ID *</label>
-                            <input type="text" id="studentId" placeholder="e.g. STU-2023-045" required>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-tag"></i> Payment For (e.g., Tuition, Exam Fee) *</label>
-                            <input type="text" id="paymentPurpose" placeholder="Tuition - Term 2" required>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-money-bill-wave"></i> Amount (₦ or USD) *</label>
-                            <input type="number" id="amount" placeholder="e.g. 150000" required min="100">
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-calendar"></i> Payment Date *</label>
-                            <input type="date" id="paymentDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-hashtag"></i> Transaction Reference / Deposit Slip No.</label>
-                            <input type="text" id="reference" placeholder="Enter transaction ID or teller number">
-                        </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-upload"></i> Payment Proof (optional)</label>
-                            <input type="file" id="proofUpload" accept="image/*,.pdf">
-                            <small style="color:#5b7f95;">Upload screenshot or bank slip (max 2MB)</small>
-                        </div>
-                        <button type="submit" class="btn btn-primary" id="submitPaymentBtn">
-                            <i class="fas fa-paper-plane"></i> Submit Payment Notification
-                        </button>
-                    </form>
-                </div>
+        <!-- filter and actions -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label><i class="fas fa-filter"></i> Show:</label>
+                <select id="filterStatus">
+                    <option value="all">All Students</option>
+                    <option value="paid">Paid Only</option>
+                    <option value="unpaid">Unpaid Only</option>
+                </select>
+                <input type="text" id="searchInput" placeholder="Search name or ID" style="width: 200px;">
+            </div>
+            <div>
+                <button class="btn btn-primary" id="addPaymentBtn"><i class="fas fa-plus-circle"></i> Add Payment Record</button>
+                <button class="btn btn-outline" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
         </div>
 
-        <!-- Recent payment history (demo / localStorage) -->
-        <div class="recent-payments card">
-            <div class="card-header">
-                <i class="fas fa-history"></i>
-                <h2>Recent Payment Submissions</h2>
-            </div>
-            <div class="card-body">
-                <div class="table-wrapper">
-                    <table class="payments-table" id="paymentsTable">
-                        <thead>
-                            <tr><th>Date</th><th>Student</th><th>Purpose</th><th>Amount</th><th>Status</th><th>Ref</th></tr>
-                        </thead>
-                        <tbody id="paymentHistoryBody">
-                            <tr><td colspan="6" style="text-align: center;">No payments recorded yet. Submit the form to track.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <!-- student table -->
+        <div class="table-wrapper">
+            <table class="payments-table" id="studentTable">
+                <thead>
+                    <tr><th>Student ID</th><th>Student Name</th><th>Class</th><th>Amount Paid (₦)</th><th>Payment Date</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
         </div>
-        <div class="footer-note">
-            <i class="fas fa-lock"></i> Secured payment notification system. After submission, the finance team will verify your transfer.
+    </div>
+</div>
+
+<!-- Modal for adding/editing payment -->
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle"><i class="fas fa-credit-card"></i> Record Payment</h3>
+        <input type="hidden" id="editStudentId">
+        <div class="form-group">
+            <label>Student Name *</label>
+            <input type="text" id="modalStudentName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+            <label>Student ID *</label>
+            <input type="text" id="modalStudentId" placeholder="e.g. STU-001">
+        </div>
+        <div class="form-group">
+            <label>Class *</label>
+            <input type="text" id="modalClass" placeholder="Grade 10A">
+        </div>
+        <div class="form-group">
+            <label>Amount Paid (₦) *</label>
+            <input type="number" id="modalAmount" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+            <label>Payment Date *</label>
+            <input type="date" id="modalDate">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-outline" id="closeModalBtn">Cancel</button>
+            <button class="btn btn-primary" id="savePaymentBtn">Save Payment</button>
         </div>
     </div>
 </div>
 
 <script>
-    // ---------- LOCAL STORAGE FOR PAYMENT HISTORY ----------
-    const STORAGE_KEY = 'tt_school_payments';
-    let paymentsArray = [];
+    // ---------- STORAGE ----------
+    const STORAGE_KEY = 'tt_fee_payments';
+    let students = []; // each: { id, studentId, name, class, amount, date, status }
 
-    // load existing
-    function loadPayments() {
+    // load initial demo data if empty
+    function loadData() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if(stored) {
-            paymentsArray = JSON.parse(stored);
+            students = JSON.parse(stored);
         } else {
-            // demo placeholder
-            paymentsArray = [];
+            // sample students (some paid, some unpaid)
+            students = [
+                { id: 1, studentId: "STU-001", name: "Michael Johnson", class: "Grade 10A", amount: 150000, date: "2025-03-10", status: "paid" },
+                { id: 2, studentId: "STU-002", name: "Sarah Williams", class: "Grade 10A", amount: 150000, date: "2025-03-12", status: "paid" },
+                { id: 3, studentId: "STU-003", name: "James Wilson", class: "Grade 11B", amount: 0, date: "", status: "unpaid" },
+                { id: 4, studentId: "STU-004", name: "Emily Davis", class: "Grade 9C", amount: 150000, date: "2025-03-05", status: "paid" },
+                { id: 5, studentId: "STU-005", name: "David Chen", class: "Grade 12A", amount: 0, date: "", status: "unpaid" },
+                { id: 6, studentId: "STU-006", name: "Olivia Martinez", class: "Grade 10B", amount: 75000, date: "2025-03-01", status: "partial" },
+                { id: 7, studentId: "STU-007", name: "Robert Brown", class: "Grade 11A", amount: 150000, date: "2025-03-14", status: "paid" }
+            ];
+            persist();
         }
-        renderPaymentHistory();
+        renderAll();
     }
 
-    function savePayments() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(paymentsArray));
+    function persist() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
     }
 
-    function renderPaymentHistory() {
-        const tbody = document.getElementById('paymentHistoryBody');
-        if(!paymentsArray.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">📭 No payment submissions yet. Complete the form above.</td></tr>';
+    // compute stats
+    function updateStats() {
+        const total = students.length;
+        const paidCount = students.filter(s => s.status === 'paid').length;
+        const unpaidCount = students.filter(s => s.status === 'unpaid').length;
+        const partialCount = students.filter(s => s.status === 'partial').length;
+        const totalCollected = students.reduce((sum, s) => sum + (s.amount || 0), 0);
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><i class="fas fa-users"></i><div class="stat-number">${total}</div><div class="stat-label">Total Students</div></div>
+            <div class="stat-card"><i class="fas fa-check-circle"></i><div class="stat-number">${paidCount}</div><div class="stat-label">Fully Paid</div></div>
+            <div class="stat-card"><i class="fas fa-clock"></i><div class="stat-number">${unpaidCount}</div><div class="stat-label">Unpaid</div></div>
+            <div class="stat-card"><i class="fas fa-chart-line"></i><div class="stat-number">₦${totalCollected.toLocaleString()}</div><div class="stat-label">Total Collected</div></div>
+        `;
+    }
+
+    function renderTable(filterStatus = 'all', searchTerm = '') {
+        let filtered = [...students];
+        if(filterStatus === 'paid') filtered = filtered.filter(s => s.status === 'paid');
+        else if(filterStatus === 'unpaid') filtered = filtered.filter(s => s.status === 'unpaid');
+        
+        if(searchTerm) {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter(s => s.name.toLowerCase().includes(term) || s.studentId.toLowerCase().includes(term));
+        }
+
+        const tbody = document.getElementById('tableBody');
+        if(filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found</td></tr>';
             return;
         }
+
         let html = '';
-        // show latest first
-        [...paymentsArray].reverse().forEach(p => {
-            const statusClass = p.status === 'Pending' ? 'status-pending' : 'status-badge';
+        filtered.forEach(student => {
+            const statusClass = student.status === 'paid' ? 'status-paid' : (student.status === 'partial' ? 'status-paid' : 'status-unpaid');
+            const statusText = student.status === 'paid' ? 'Paid' : (student.status === 'partial' ? 'Partial' : 'Unpaid');
+            const amountDisplay = student.amount ? `₦${student.amount.toLocaleString()}` : '—';
+            const dateDisplay = student.date || '—';
             html += `
                 <tr>
-                    <td>${p.date}</td>
-                    <td>${escapeHtml(p.studentName)} (${p.studentId})</td>
-                    <td>${escapeHtml(p.purpose)}</td>
-                    <td>${p.amount}</td>
-                    <td><span class="status-badge ${statusClass}">${p.status}</span></td>
-                    <td>${p.reference || '—'}</td>
+                    <td>${student.studentId}</td>
+                    <td>${student.name}</td>
+                    <td>${student.class}</td>
+                    <td>${amountDisplay}</td>
+                    <td>${dateDisplay}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td class="action-icons">
+                        <i class="fas fa-check-circle" title="Mark as Paid" data-id="${student.id}" data-action="markPaid"></i>
+                        <i class="fas fa-edit" title="Edit Payment" data-id="${student.id}" data-action="edit"></i>
+                    </td>
                 </tr>
             `;
         });
         tbody.innerHTML = html;
+        updateStats();
     }
 
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-
-    // add new payment record
-    function addPaymentRecord(studentName, studentId, purpose, amount, paymentDate, reference, proofFile) {
-        if(!studentName || !studentId || !purpose || !amount || !paymentDate) {
-            alert("Please fill all required fields (*).");
-            return false;
-        }
-        const amountVal = parseFloat(amount);
-        if(isNaN(amountVal) || amountVal <= 0) {
-            alert("Enter a valid amount.");
-            return false;
-        }
-        // create record
-        const newRecord = {
-            id: Date.now(),
-            studentName: studentName.trim(),
-            studentId: studentId.trim(),
-            purpose: purpose.trim(),
-            amount: amountVal,
-            date: paymentDate,
-            reference: reference || 'N/A',
-            status: 'Pending',
-            proofName: proofFile ? proofFile.name : null,
-            timestamp: new Date().toISOString()
-        };
-        paymentsArray.push(newRecord);
-        savePayments();
-        renderPaymentHistory();
-        return true;
+    function renderAll() {
+        const filter = document.getElementById('filterStatus').value;
+        const search = document.getElementById('searchInput').value;
+        renderTable(filter, search);
     }
 
-    // Copy functionality for account details
-    function setupCopyButtons() {
-        const copyIcons = document.querySelectorAll('.copy-icon');
-        copyIcons.forEach(icon => {
-            icon.addEventListener('click', (e) => {
-                const textToCopy = icon.getAttribute('data-copy');
-                if(textToCopy) {
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        // temporary tooltip feedback
-                        const originalTitle = icon.getAttribute('title');
-                        icon.setAttribute('title', 'Copied!');
-                        setTimeout(() => icon.setAttribute('title', originalTitle), 1500);
-                        // optional alert
-                        const msg = document.createElement('div');
-                        msg.innerText = `Copied: ${textToCopy}`;
-                        msg.style.position = 'fixed'; msg.style.bottom = '20px'; msg.style.right = '20px';
-                        msg.style.background = '#0b2b44'; msg.style.color = 'white'; msg.style.padding = '10px 18px';
-                        msg.style.borderRadius = '30px'; msg.style.fontSize = '0.8rem'; msg.style.zIndex = '999';
-                        document.body.appendChild(msg);
-                        setTimeout(() => msg.remove(), 2000);
-                    }).catch(() => alert('Press Ctrl+C to copy'));
-                }
-            });
+    // mark as paid (full amount)
+    function markAsPaid(studentId) {
+        const student = students.find(s => s.id === studentId);
+        if(student) {
+            student.status = 'paid';
+            if(!student.amount) student.amount = 150000; // default full fee
+            if(!student.date) student.date = new Date().toISOString().slice(0,10);
+            persist();
+            renderAll();
+            alert(`${student.name} marked as PAID.`);
+        }
+    }
+
+    // edit / add payment modal
+    let currentEditId = null;
+    function openModal(editId = null) {
+        const modal = document.getElementById('paymentModal');
+        document.getElementById('modalTitle').innerHTML = editId ? '<i class="fas fa-edit"></i> Edit Payment' : '<i class="fas fa-plus-circle"></i> Add New Payment';
+        if(editId) {
+            const student = students.find(s => s.id === editId);
+            if(student) {
+                document.getElementById('editStudentId').value = student.id;
+                document.getElementById('modalStudentName').value = student.name;
+                document.getElementById('modalStudentId').value = student.studentId;
+                document.getElementById('modalClass').value = student.class;
+                document.getElementById('modalAmount').value = student.amount || '';
+                document.getElementById('modalDate').value = student.date || new Date().toISOString().slice(0,10);
+                currentEditId = editId;
+            }
+        } else {
+            // reset form
+            document.getElementById('editStudentId').value = '';
+            document.getElementById('modalStudentName').value = '';
+            document.getElementById('modalStudentId').value = '';
+            document.getElementById('modalClass').value = '';
+            document.getElementById('modalAmount').value = '';
+            document.getElementById('modalDate').value = new Date().toISOString().slice(0,10);
+            currentEditId = null;
+        }
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('paymentModal').classList.remove('active');
+        currentEditId = null;
+    }
+
+    function savePaymentFromModal() {
+        const name = document.getElementById('modalStudentName').value.trim();
+        const studentId = document.getElementById('modalStudentId').value.trim();
+        const className = document.getElementById('modalClass').value.trim();
+        let amount = parseFloat(document.getElementById('modalAmount').value);
+        const date = document.getElementById('modalDate').value;
+        if(!name || !studentId || !className || isNaN(amount) || amount < 0) {
+            alert("Please fill all fields correctly (amount must be numeric).");
+            return;
+        }
+        const status = amount >= 150000 ? 'paid' : (amount > 0 ? 'partial' : 'unpaid'); // assuming full fee 150k
+        if(currentEditId) {
+            // update existing
+            const idx = students.findIndex(s => s.id === currentEditId);
+            if(idx !== -1) {
+                students[idx] = { ...students[idx], name, studentId, class: className, amount, date, status };
+                persist();
+            }
+        } else {
+            // add new student record
+            const newId = Date.now();
+            students.push({ id: newId, studentId, name, class: className, amount, date, status });
+            persist();
+        }
+        closeModal();
+        renderAll();
+    }
+
+    // event listeners
+    function bindEvents() {
+        document.getElementById('filterStatus').addEventListener('change', () => renderAll());
+        document.getElementById('searchInput').addEventListener('input', () => renderAll());
+        document.getElementById('refreshBtn').addEventListener('click', () => renderAll());
+        document.getElementById('addPaymentBtn').addEventListener('click', () => openModal());
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+        document.getElementById('savePaymentBtn').addEventListener('click', savePaymentFromModal);
+        
+        document.getElementById('tableBody').addEventListener('click', (e) => {
+            const target = e.target;
+            const action = target.getAttribute('data-action');
+            const id = parseInt(target.getAttribute('data-id'));
+            if(action === 'markPaid') markAsPaid(id);
+            if(action === 'edit') openModal(id);
         });
+        // close modal on outside click
+        window.onclick = (e) => { if(e.target === document.getElementById('paymentModal')) closeModal(); };
     }
 
-    // Form submission
-    document.getElementById('paymentForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const studentName = document.getElementById('studentName').value.trim();
-        const studentId = document.getElementById('studentId').value.trim();
-        const purpose = document.getElementById('paymentPurpose').value.trim();
-        const amount = document.getElementById('amount').value;
-        const paymentDate = document.getElementById('paymentDate').value;
-        const reference = document.getElementById('reference').value.trim();
-        const proofFile = document.getElementById('proofUpload').files[0];
-
-        if(addPaymentRecord(studentName, studentId, purpose, amount, paymentDate, reference, proofFile)) {
-            // clear form but keep account details visible
-            document.getElementById('studentName').value = '';
-            document.getElementById('studentId').value = '';
-            document.getElementById('paymentPurpose').value = '';
-            document.getElementById('amount').value = '';
-            document.getElementById('paymentDate').value = '';
-            document.getElementById('reference').value = '';
-            document.getElementById('proofUpload').value = '';
-            alert('✅ Payment notification submitted! The finance office will verify and update status.');
-        }
-    });
-
-    // set default date as today
-    const today = new Date().toISOString().slice(0,10);
-    document.getElementById('paymentDate').value = today;
-
-    loadPayments();
-    setupCopyButtons();
+    loadData();
+    bindEvents();
 </script>
 </body>
 </html>
