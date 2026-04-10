@@ -938,9 +938,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                             <button class="tab-btn active" data-tab="academic">
                                 <i class="fas fa-graduation-cap"></i> Academic
                             </button>
-                            <button class="tab-btn" data-tab="attendance">
-                                <i class="fas fa-calendar-alt"></i> Attendance
-                            </button>
                             <button class="tab-btn" data-tab="behavior">
                                 <i class="fas fa-chart-line"></i> Behavior
                             </button>
@@ -959,7 +956,7 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                                 
                                 <div class="academic-card">
                                     <h4>Overall Attendance</h4>
-                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--success);">94.5%</p>
+                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--success);">0%</p>
                                     <p style="font-size: 0.9rem; color: var(--text-light);">Placeholder data</p>
                                 </div>
                                 
@@ -997,27 +994,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                        
-                        <!-- Attendance Tab -->
-                        <div class="tab-content" id="attendanceTab">
-                            <h3 style="margin-bottom: 25px;">Attendance Record</h3>
-                            
-                            <div class="attendance-stats">
-                                <div class="attendance-stat">
-                                    <h3 style="color: var(--success);">94.5%</h3>
-                                    <p>Overall Attendance</p>
-                                </div>
-                                <div class="attendance-stat">
-                                    <h3 style="color: var(--success);">142</h3>
-                                    <p>Days Present</p>
-                                </div>
-                                <div class="attendance-stat">
-                                    <h3 style="color: var(--danger);">8</h3>
-                                    <p>Days Absent</p>
-                                </div>
-                            </div>
-                            <p style="text-align: center; padding: 20px; color: var(--text-light);">Detailed attendance visualization available in Attendance section.</p>
                         </div>
                         
                         <!-- Behavior Tab -->

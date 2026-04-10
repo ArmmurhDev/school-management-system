@@ -50,11 +50,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'staff') {
             <span class="menu-text">My Students</span>
         </a>
         
-        <a href="attendance.php" class="menu-item <?php echo ($currentPage == 'attendance.php') ? 'active' : ''; ?>">
-            <i class="fas fa-calendar-check"></i>
-            <span class="menu-text">Attendance</span>
-        </a>
-        
         <a href="enter_results.php" class="menu-item <?php echo ($currentPage == 'enter_results.php') ? 'active' : ''; ?>">
             <i class="fas fa-edit"></i>
             <span class="menu-text">Enter Results</span>

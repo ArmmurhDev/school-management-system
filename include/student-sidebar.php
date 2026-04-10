@@ -40,16 +40,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Assignments</span>
         </a>
         
-        <a href="student-schedule.php" class="menu-item <?php echo ($current_page == 'student-schedule.php') ? 'active' : ''; ?>">
-            <i class="fas fa-calendar-alt"></i>
-            <span class="menu-text">Schedule</span>
-        </a>
-        
-        <a href="student-attendance.php" class="menu-item <?php echo ($current_page == 'student-attendance.php') ? 'active' : ''; ?>">
-            <i class="fas fa-calendar-check"></i>
-            <span class="menu-text">Attendance</span>
-        </a>
-        
         <a href="student-messages.php" class="menu-item <?php echo ($current_page == 'student-messages.php') ? 'active' : ''; ?>">
             <i class="fas fa-envelope"></i>
             <span class="menu-text">Messages</span>
