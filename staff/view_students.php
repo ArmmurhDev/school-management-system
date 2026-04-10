@@ -4,10 +4,42 @@ require_once '../include/config.php';
 checkAccess('staff');
 
 $student_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$staff_id = $_SESSION['user_id'];
+
+// Ensure student_notes table exists
+try {
+    $pdo->query("CREATE TABLE IF NOT EXISTS `student_notes` (
+      `note_id` int(11) NOT NULL AUTO_INCREMENT,
+      `student_id` int(11) NOT NULL,
+      `staff_id` int(11) NOT NULL,
+      `note_text` text NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (`note_id`),
+      KEY `student_id` (`student_id`),
+      KEY `staff_id` (`staff_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (PDOException $e) {
+    // Ignore error if table exists or cannot be created
+}
 
 if ($student_id <= 0) {
     header("Location: enroll_student.php");
     exit;
+}
+
+// Handle Add Note Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_note') {
+    $note_text = trim($_POST['note_text']);
+    if (!empty($note_text)) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO student_notes (student_id, staff_id, note_text) VALUES (?, ?, ?)");
+            $stmt->execute([$student_id, $staff_id, $note_text]);
+            header("Location: view_students.php?id=$student_id&success=note_added");
+            exit;
+        } catch (PDOException $e) {
+            $error_message = "Error adding note: " . $e->getMessage();
+        }
+    }
 }
 
 // Fetch Student Info
@@ -23,10 +55,22 @@ if (!$student) {
     exit;
 }
 
+// Fetch Notes
+$notes_query = "
+    SELECT n.*, s.full_name as staff_name, s.position as staff_position 
+    FROM student_notes n 
+    JOIN staff s ON n.staff_id = s.staff_id 
+    WHERE n.student_id = ? 
+    ORDER BY n.created_at DESC
+";
+$stmt = $pdo->prepare($notes_query);
+$stmt->execute([$student_id]);
+$notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Map avatar
 $avatar = !empty($student['image']) ? '../assets/images/student/' . $student['image'] : 'https://ui-avatars.com/api/?name=' . urlencode($student['full_name']) . '&background=random';
 
-// Format enrollment date (using created_at as a fallback)
+// Format enrollment date
 $enrollment_date = date('M d, Y', strtotime($student['created_at']));
 
 ?>
@@ -323,21 +367,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             transform: translateY(-2px);
         }
         
-        .btn-success {
-            background-color: var(--success);
-            color: var(--white);
-        }
-        
-        .btn-warning {
-            background-color: var(--warning);
-            color: var(--white);
-        }
-        
-        .btn-danger {
-            background-color: var(--danger);
-            color: var(--white);
-        }
-        
         /* Student Profile Container */
         .student-profile-container {
             display: grid;
@@ -595,21 +624,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             color: var(--info);
         }
         
-        .grade-c {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
-        .grade-d {
-            background-color: rgba(253, 126, 20, 0.1);
-            color: #fd7e14;
-        }
-        
-        .grade-f {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-        
         /* Attendance */
         .attendance-stats {
             display: grid;
@@ -637,75 +651,7 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             font-size: 0.9rem;
         }
         
-        .attendance-calendar {
-            margin-top: 30px;
-        }
-        
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .calendar-month {
-            font-weight: 600;
-            color: var(--primary-dark);
-            font-size: 1.2rem;
-        }
-        
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-        
-        .calendar-day-header {
-            text-align: center;
-            padding: 10px;
-            font-weight: 600;
-            color: var(--primary-medium);
-            font-size: 0.9rem;
-            background-color: var(--light-bg);
-            border-radius: 5px;
-        }
-        
-        .calendar-day {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 5px;
-            font-weight: 500;
-            position: relative;
-        }
-        
-        .calendar-day.present::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            width: 6px;
-            height: 6px;
-            background-color: var(--success);
-            border-radius: 50%;
-        }
-        
-        .calendar-day.absent::after {
-            content: '';
-            position: absolute;
-            bottom: 5px;
-            width: 6px;
-            height: 6px;
-            background-color: var(--danger);
-            border-radius: 50%;
-        }
-        
-        .calendar-day.today {
-            background-color: var(--primary-light);
-            color: var(--white);
-        }
-        
-        /* Behavior */
+        /* Behavior Timeline */
         .behavior-timeline {
             position: relative;
             max-width: 800px;
@@ -740,18 +686,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             top: 5px;
         }
         
-        .behavior-item.positive::before {
-            border-color: var(--success);
-        }
-        
-        .behavior-item.negative::before {
-            border-color: var(--danger);
-        }
-        
-        .behavior-item.neutral::before {
-            border-color: var(--warning);
-        }
-        
         .behavior-content {
             background-color: var(--light-bg);
             border-radius: 10px;
@@ -779,133 +713,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             color: var(--text-light);
             font-size: 0.95rem;
             line-height: 1.6;
-        }
-        
-        /* Medical */
-        .medical-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 30px;
-        }
-        
-        .medical-card {
-            background-color: var(--white);
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 3px 10px rgba(0, 51, 102, 0.05);
-            border: 1px solid #eee;
-        }
-        
-        .medical-card h4 {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-        }
-        
-        .medical-card h4 i {
-            margin-right: 10px;
-            color: var(--primary-medium);
-        }
-        
-        .medical-item {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #eee;
-        }
-        
-        .medical-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        
-        .medical-label {
-            font-weight: 600;
-            color: var(--primary-dark);
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-        
-        .medical-value {
-            color: var(--text-light);
-            font-size: 0.95rem;
-        }
-        
-        /* Documents */
-        .documents-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .document-card {
-            background-color: var(--white);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0, 51, 102, 0.05);
-            border: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            transition: all 0.3s;
-        }
-        
-        .document-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 51, 102, 0.1);
-        }
-        
-        .document-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            background-color: var(--light-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: var(--primary-medium);
-            font-size: 1.3rem;
-        }
-        
-        .document-info h5 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-            color: var(--primary-dark);
-        }
-        
-        .document-info p {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            margin-bottom: 10px;
-        }
-        
-        .document-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .doc-action-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .doc-action-btn.view {
-            background-color: rgba(30, 136, 229, 0.1);
-            color: var(--accent-blue);
-        }
-        
-        .doc-action-btn.download {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success);
         }
         
         /* Notes Section */
@@ -1029,77 +836,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                 padding: 15px 20px;
             }
         }
-        
-        @media (max-width: 768px) {
-            .student-profile-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 20px;
-            }
-            
-            .student-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .top-header {
-                padding: 20px;
-            }
-            
-            .dashboard-content {
-                padding: 20px;
-            }
-            
-            .attendance-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .academic-info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .calendar-grid {
-                grid-template-columns: repeat(7, 1fr);
-                gap: 5px;
-            }
-            
-            .calendar-day-header,
-            .calendar-day {
-                padding: 8px 5px;
-                font-size: 0.85rem;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .student-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .attendance-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .profile-detail {
-                flex-direction: column;
-                gap: 5px;
-            }
-            
-            .detail-value {
-                text-align: left;
-            }
-            
-            .tab-btn {
-                flex: 1;
-                min-width: 120px;
-                justify-content: center;
-            }
-        }
     </style>
 </head>
 <body>
@@ -1127,11 +863,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                     <div class="header-action">
                         <i class="fas fa-print" title="Print Profile"></i>
                     </div>
-                    
-                    <div class="header-action">
-                        <i class="fas fa-share-alt" title="Share"></i>
-                    </div>
-                    
                     <div class="header-action">
                         <i class="fas fa-user-circle"></i>
                     </div>
@@ -1143,17 +874,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                 <!-- Student Profile Header -->
                 <div class="student-profile-header">
                     <h2><?php echo htmlspecialchars($student['full_name']); ?></h2>
-                    <div class="student-actions">
-                        <button class="btn btn-secondary">
-                            <i class="fas fa-edit"></i> Edit Profile
-                        </button>
-                        <button class="btn btn-primary">
-                            <i class="fas fa-envelope"></i> Contact Parent
-                        </button>
-                        <button class="btn btn-success">
-                            <i class="fas fa-file-pdf"></i> Generate Report
-                        </button>
-                    </div>
                 </div>
                 
                 <!-- Student Profile Container -->
@@ -1179,11 +899,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                             <div class="profile-detail">
                                 <span class="detail-label">Age</span>
                                 <span class="detail-value"><?php echo htmlspecialchars($student['age']); ?> years</span>
-                            </div>
-                            
-                            <div class="profile-detail">
-                                <span class="detail-label">Gender</span>
-                                <span class="detail-value">N/A</span>
                             </div>
                             
                             <div class="profile-detail">
@@ -1229,12 +944,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                             <button class="tab-btn" data-tab="behavior">
                                 <i class="fas fa-chart-line"></i> Behavior
                             </button>
-                            <button class="tab-btn" data-tab="medical">
-                                <i class="fas fa-heartbeat"></i> Medical
-                            </button>
-                            <button class="tab-btn" data-tab="documents">
-                                <i class="fas fa-folder"></i> Documents
-                            </button>
                         </div>
                         
                         <!-- Academic Tab -->
@@ -1262,7 +971,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                             </div>
                             
                             <h4 style="margin: 30px 0 20px;">Recent Course Performance</h4>
-                            <p style="color: var(--text-light); margin-bottom: 20px;">Sample performance data below. For actual grades, please visit the Enter Results section.</p>
                             <div class="grades-table-container">
                                 <table class="grades-table">
                                     <thead>
@@ -1300,77 +1008,40 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                                     <h3 style="color: var(--success);">94.5%</h3>
                                     <p>Overall Attendance</p>
                                 </div>
-                                
                                 <div class="attendance-stat">
                                     <h3 style="color: var(--success);">142</h3>
                                     <p>Days Present</p>
                                 </div>
-                                
                                 <div class="attendance-stat">
                                     <h3 style="color: var(--danger);">8</h3>
                                     <p>Days Absent</p>
                                 </div>
-                                
-                                <div class="attendance-stat">
-                                    <h3 style="color: var(--warning);">5</h3>
-                                    <p>Days Late</p>
-                                </div>
                             </div>
-                            
-                            <div class="attendance-calendar">
-                                <div class="calendar-header">
-                                    <div class="calendar-month"><?php echo date('F Y'); ?></div>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn btn-secondary" style="padding: 8px 15px;">
-                                            <i class="fas fa-chevron-left"></i>
-                                        </button>
-                                        <button class="btn btn-secondary" style="padding: 8px 15px;">
-                                            <i class="fas fa-chevron-right"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <p style="text-align: center; padding: 20px; color: var(--text-light);">Attendance visualization placeholder for current month.</p>
-                            </div>
+                            <p style="text-align: center; padding: 20px; color: var(--text-light);">Detailed attendance visualization available in Attendance section.</p>
                         </div>
                         
                         <!-- Behavior Tab -->
                         <div class="tab-content" id="behaviorTab">
                             <h3 style="margin-bottom: 25px;">Behavior & Conduct</h3>
                             
-                            <div class="behavior-timeline">
-                                <div class="behavior-item positive">
-                                    <div class="behavior-content">
-                                        <div class="behavior-header">
-                                            <div class="behavior-title">Excellent Class Participation</div>
-                                            <div class="behavior-date"><?php echo date('M d, Y'); ?></div>
+                            <div class="behavior-timeline" id="behaviorTimeline">
+                                <?php if (empty($notes)): ?>
+                                    <p style="color: var(--text-light); text-align: center; padding: 20px;">No behavior records found for this student.</p>
+                                <?php else: ?>
+                                    <?php foreach ($notes as $note): ?>
+                                        <div class="behavior-item">
+                                            <div class="behavior-content">
+                                                <div class="behavior-header">
+                                                    <div class="behavior-title"><?php echo htmlspecialchars($note['staff_name']); ?> (<?php echo htmlspecialchars($note['staff_position']); ?>)</div>
+                                                    <div class="behavior-date"><?php echo date('M d, Y h:i A', strtotime($note['created_at'])); ?></div>
+                                                </div>
+                                                <div class="behavior-description">
+                                                    <?php echo nl2br(htmlspecialchars($note['note_text'])); ?>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="behavior-description">
-                                            <?php echo htmlspecialchars($student['full_name']); ?> actively participated in class discussions and demonstrated excellent understanding.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Medical Tab -->
-                        <div class="tab-content" id="medicalTab">
-                            <h3 style="margin-bottom: 25px;">Medical Information</h3>
-                            
-                            <div class="medical-info">
-                                <div class="medical-card">
-                                    <h4><i class="fas fa-file-medical"></i> Medical History</h4>
-                                    <p style="color: var(--text-light);">No records found.</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Documents Tab -->
-                        <div class="tab-content" id="documentsTab">
-                            <h3 style="margin-bottom: 25px;">Student Documents</h3>
-                            
-                            <div class="documents-grid">
-                                <p style="color: var(--text-light);">No documents uploaded.</p>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -1379,28 +1050,27 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                 <!-- Notes Section -->
                 <div class="notes-section">
                     <div class="notes-header">
-                        <h3>Staff Notes</h3>
+                        <h3>Add Staff Note</h3>
                         <button class="btn btn-secondary" id="addNoteBtn">
-                            <i class="fas fa-plus"></i> Add Note
+                            <i class="fas fa-plus"></i> Add New Note
                         </button>
                     </div>
                     
-                    <div class="notes-list" id="notesList">
-                        <p style="color: var(--text-light); text-align: center; padding: 20px;">No staff notes for this student yet.</p>
-                    </div>
-                    
                     <div class="note-form" id="noteForm" style="display: none;">
-                        <textarea id="newNote" placeholder="Enter your note here..."></textarea>
-                        <div style="display: flex; justify-content: flex-end; gap: 15px;">
-                            <button class="btn btn-secondary" id="cancelNoteBtn">Cancel</button>
-                            <button class="btn btn-primary" id="saveNoteBtn">Save Note</button>
-                        </div>
+                        <form method="POST">
+                            <input type="hidden" name="action" value="add_note">
+                            <textarea name="note_text" id="newNote" placeholder="Enter behavior or conduct note here..." required></textarea>
+                            <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                                <button type="button" class="btn btn-secondary" id="cancelNoteBtn">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Note</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 
                 <!-- Footer -->
                 <div class="dashboard-footer">
-                    <p>&copy; <?php echo date('Y'); ?> T&T School Management System. All rights reserved. | Student Profile View</p>
+                    <p>&copy; <?php echo date('Y'); ?> T&T School Management System. All rights reserved.</p>
                 </div>
             </div>
         </div>
@@ -1416,13 +1086,17 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
         const addNoteBtn = document.getElementById('addNoteBtn');
         const noteForm = document.getElementById('noteForm');
         const cancelNoteBtn = document.getElementById('cancelNoteBtn');
-        const saveNoteBtn = document.getElementById('saveNoteBtn');
         const newNote = document.getElementById('newNote');
-        const notesList = document.getElementById('notesList');
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
+            
+            // If success message in URL, maybe switch to behavior tab
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === 'note_added') {
+                switchTab('behavior');
+            }
         });
         
         // Setup event listeners
@@ -1462,62 +1136,15 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                 addNoteBtn.style.display = 'flex';
                 newNote.value = '';
             });
-            
-            saveNoteBtn.addEventListener('click', saveNote);
         }
         
         // Switch between tabs
         function switchTab(tabId) {
-            // Remove active class from all tabs
             tabBtns.forEach(btn => btn.classList.remove('active'));
             tabContents.forEach(content => content.classList.remove('active'));
             
-            // Add active class to clicked tab
             document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
             document.getElementById(`${tabId}Tab`).classList.add('active');
-        }
-        
-        // Save new note
-        function saveNote() {
-            const noteText = newNote.value.trim();
-            
-            if (!noteText) {
-                alert('Please enter a note before saving.');
-                return;
-            }
-            
-            // For now, this is just a UI simulation
-            const noteItem = document.createElement('div');
-            noteItem.className = 'note-item';
-            
-            const today = new Date();
-            const formattedDate = today.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-            
-            // Clear empty message if first note
-            if (notesList.querySelector('p')) {
-                notesList.innerHTML = '';
-            }
-
-            noteItem.innerHTML = `
-                <div class="note-header">
-                    <div class="note-author">Staff Member</div>
-                    <div class="note-date">${formattedDate}</div>
-                </div>
-                <div class="note-content">${noteText}</div>
-            `;
-            
-            notesList.prepend(noteItem);
-            
-            // Reset form
-            newNote.value = '';
-            noteForm.style.display = 'none';
-            addNoteBtn.style.display = 'flex';
-            
-            alert('Note saved successfully (Simulated)!');
         }
         
         // Handle window resize

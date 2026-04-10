@@ -146,6 +146,17 @@ CREATE TABLE IF NOT EXISTS `course_registrations` (
   KEY `course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `student_notes` (
+  `note_id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `staff_id` int(11) NOT NULL,
+  `note_text` text NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`note_id`),
+  KEY `student_id` (`student_id`),
+  KEY `staff_id` (`staff_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- --------------------------------------------------------
 -- Demo Data
 -- --------------------------------------------------------
