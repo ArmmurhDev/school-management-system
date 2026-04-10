@@ -936,7 +936,7 @@ checkAccess('staff');
                     </div>
                     
                     <div class="header-action">
-                        <i class="fas fa-user-circle"></i>
+                        <img src="<?php echo htmlspecialchars($staff_image); ?>" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
                     </div>
                 </div>
             </div>
@@ -946,7 +946,7 @@ checkAccess('staff');
                 <!-- Welcome Section -->
                 <div class="welcome-section">
                     <div class="welcome-text">
-                        <h2>Welcome back, Mr. David Chen!</h2>
+                        <h2>Welcome back, <?php echo htmlspecialchars($staff_name); ?>!</h2>
                         <p>Here's what's happening with your classes today. You have 3 classes scheduled and 2 pending tasks to complete.</p>
                     </div>
                     
@@ -1520,7 +1520,7 @@ checkAccess('staff');
             
             const welcomeHeading = document.querySelector('.welcome-text h2');
             if (welcomeHeading) {
-                welcomeHeading.textContent = `${greeting}, Mr. David Chen!`;
+                welcomeHeading.textContent = `${greeting}, <?php echo htmlspecialchars($staff_name); ?>!`;
             }
         }
         

@@ -575,6 +575,7 @@ if (isset($_POST['confirm_logout'])) {
     </style>
 </head>
 <body>
+    <?php include '../include/staff_sidebar.php'; ?>
     <div class="logout-container">
         <!-- Logo Header -->
         <div class="logo-header">
@@ -593,12 +594,12 @@ if (isset($_POST['confirm_logout'])) {
         <div class="logout-card" id="logoutCard">
             <div class="staff-info">
                 <div class="staff-avatar">
-                    <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Staff Avatar">
+                    <img src="<?php echo htmlspecialchars($staff_image); ?>" alt="Staff Avatar">
                 </div>
                 <div class="staff-details">
-                    <h3>Ms. Emily Johnson</h3>
-                    <p>Physics Department</p>
-                    <div class="staff-role">Senior Teacher</div>
+                    <h3><?php echo htmlspecialchars($staff_name); ?></h3>
+                    <p><?php echo htmlspecialchars($staff_subject); ?> Department</p>
+                    <div class="staff-role"><?php echo htmlspecialchars($staff_position); ?></div>
                     <p style="margin-top: 10px; color: var(--primary-light); font-size: 0.9rem;">
                         <i class="fas fa-envelope"></i> e.johnson@ttschool.edu
                     </p>

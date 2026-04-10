@@ -483,7 +483,7 @@
                         <i class="fas fa-bell" style="color: var(--primary-medium);"></i>
                     </div>
                     <div class="header-action" style="margin-left: 25px; cursor: pointer;">
-                        <i class="fas fa-user-circle" style="color: var(--primary-medium);"></i>
+                        <img src="<?php echo htmlspecialchars($staff_image); ?>" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
                     </div>
                 </div>
             </div>
@@ -494,7 +494,7 @@
                         <div class="staff-row">
                             <div class="title-section">
                                 <h1><i class="fas fa-chalkboard-user"></i> My Class Schedule</h1>
-                                <p><i class="fas fa-user-graduate"></i> Prof. Sophia Lin · Computer Science Department · Staff ID: TCH-0042</p>
+                                <p><i class="fas fa-user-graduate"></i> <?php echo htmlspecialchars($staff_name); ?> · <?php echo htmlspecialchars($staff_subject); ?> Department · Staff ID: <?php echo htmlspecialchars($staff_id_display); ?></p>
                             </div>
                             <div class="stats-badge">
                                 <i class="fas fa-calendar-alt"></i> Spring 2025 Semester
