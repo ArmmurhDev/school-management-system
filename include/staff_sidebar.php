@@ -1,5 +1,27 @@
 <?php
 $currentPage = basename($_SERVER['PHP_SELF']);
+require_once __DIR__ . '/config.php';
+
+// Fetch staff details if logged in
+$staff_name = "Staff Member";
+$staff_position = "Teacher";
+$staff_image = "../assets/images/staff/default.png"; // Default image
+
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'staff') {
+    $stmt = $pdo->prepare("SELECT * FROM staff WHERE staff_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $staff = $stmt->fetch();
+    
+    if ($staff) {
+        $staff_name = $staff['full_name'];
+        $staff_position = $staff['position'];
+        $staff_subject = $staff['subject'];
+        $staff_id_display = "STF-" . str_pad($staff['staff_id'], 4, "0", STR_PAD_LEFT);
+        if (!empty($staff['image'])) {
+            $staff_image = "../assets/images/staff/" . $staff['image'];
+        }
+    }
+}
 ?>
 <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -18,17 +40,17 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Dashboard</span>
         </a>
         
-        <a href="my_classes.php" class="menu-item">
+        <!---a href="my_classes.php" class="menu-item <?php echo ($currentPage == 'my_classes.php') ? 'active' : ''; ?>">
             <i class="fas fa-chalkboard-teacher"></i>
             <span class="menu-text">My Classes</span>
-        </a>
+        </a--->
         
-        <a href="view_students.php" class="menu-item <?php echo ($currentPage == 'view_students.php') ? 'active' : ''; ?>">
+        <a href="enroll_student.php" class="menu-item <?php echo ($currentPage == 'view_students.php') ? 'active' : ''; ?>">
             <i class="fas fa-users"></i>
             <span class="menu-text">My Students</span>
         </a>
         
-        <a href="attendance.php" class="menu-item">
+        <a href="attendance.php" class="menu-item <?php echo ($currentPage == 'attendance.php') ? 'active' : ''; ?>">
             <i class="fas fa-calendar-check"></i>
             <span class="menu-text">Attendance</span>
         </a>
@@ -43,7 +65,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">View Results</span>
         </a>
         
-        <a href="#" class="menu-item">
+        <a href="time_table.php" class="menu-item <?php echo ($currentPage == 'time_table.php') ? 'active' : ''; ?>">
             <i class="fas fa-calendar-alt"></i>
             <span class="menu-text">Timetable</span>
         </a>
@@ -62,11 +84,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <div class="sidebar-footer">
         <div class="user-info">
             <div class="user-avatar">
-                <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Teacher">
+                <img src="<?php echo htmlspecialchars($staff_image); ?>" alt="Staff Image">
             </div>
             <div class="user-details">
-                <h4>Mr. David Chen</h4>
-                <p>Mathematics Teacher</p>
+                <h4><?php echo htmlspecialchars($staff_name); ?></h4>
+                <p><?php echo htmlspecialchars($staff_position); ?></p>
             </div>
         </div>
     </div>

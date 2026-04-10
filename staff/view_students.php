@@ -1,13 +1,41 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('staff');
+
+$student_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+if ($student_id <= 0) {
+    header("Location: enroll_student.php");
+    exit;
+}
+
+// Fetch Student Info
+$query = "
+    SELECT * FROM students WHERE student_id = ?
+";
+$stmt = $pdo->prepare($query);
+$stmt->execute([$student_id]);
+$student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$student) {
+    echo "Student not found.";
+    exit;
+}
+
+// Map avatar
+$avatar = !empty($student['image']) ? '../assets/images/student/' . $student['image'] : 'https://ui-avatars.com/api/?name=' . urlencode($student['full_name']) . '&background=random';
+
+// Format enrollment date (using created_at as a fallback)
+$enrollment_date = date('M d, Y', strtotime($student['created_at']));
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Student - T&T School Management System</title>
+    <title>View Student - <?php echo htmlspecialchars($student['full_name']); ?> - T&T School Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -1114,7 +1142,7 @@ checkAccess('staff');
             <div class="dashboard-content">
                 <!-- Student Profile Header -->
                 <div class="student-profile-header">
-                    <h2>Michael Johnson</h2>
+                    <h2><?php echo htmlspecialchars($student['full_name']); ?></h2>
                     <div class="student-actions">
                         <button class="btn btn-secondary">
                             <i class="fas fa-edit"></i> Edit Profile
@@ -1135,70 +1163,55 @@ checkAccess('staff');
                         <div class="profile-header">
                             <div class="profile-status status-active">Active</div>
                             <div class="profile-avatar">
-                                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Michael Johnson">
+                                <img src="<?php echo $avatar; ?>" alt="<?php echo htmlspecialchars($student['full_name']); ?>">
                             </div>
-                            <h3>Michael Johnson</h3>
-                            <p>Grade 10 | Section A</p>
-                            <p style="font-size: 0.9rem; margin-top: 5px;">Student ID: STU-2023-045</p>
+                            <h3><?php echo htmlspecialchars($student['full_name']); ?></h3>
+                            <p><?php echo htmlspecialchars($student['class_name'] ?? 'N/A'); ?> | <?php echo htmlspecialchars($student['session_of_year'] ?? 'N/A'); ?></p>
+                            <p style="font-size: 0.9rem; margin-top: 5px;">Admission No: <?php echo htmlspecialchars($student['admission_no']); ?></p>
                         </div>
                         
                         <div class="profile-body">
                             <div class="profile-detail">
-                                <span class="detail-label">Date of Birth</span>
-                                <span class="detail-value">June 15, 2007</span>
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($student['email']); ?></span>
                             </div>
                             
                             <div class="profile-detail">
                                 <span class="detail-label">Age</span>
-                                <span class="detail-value">16 years</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($student['age']); ?> years</span>
                             </div>
                             
                             <div class="profile-detail">
                                 <span class="detail-label">Gender</span>
-                                <span class="detail-value">Male</span>
-                            </div>
-                            
-                            <div class="profile-detail">
-                                <span class="detail-label">Blood Group</span>
-                                <span class="detail-value">O+</span>
+                                <span class="detail-value">N/A</span>
                             </div>
                             
                             <div class="profile-detail">
                                 <span class="detail-label">Enrollment Date</span>
-                                <span class="detail-value">Sept 15, 2023</span>
+                                <span class="detail-value"><?php echo $enrollment_date; ?></span>
                             </div>
                             
                             <div class="profile-detail">
-                                <span class="detail-label">Class Teacher</span>
-                                <span class="detail-value">Ms. Emily Johnson</span>
-                            </div>
-                            
-                            <div class="profile-detail">
-                                <span class="detail-label">Address</span>
-                                <span class="detail-value">123 Oak Street, Knowledge City</span>
+                                <span class="detail-label">Class</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($student['class_name'] ?? 'N/A'); ?></span>
                             </div>
                         </div>
                         
                         <div class="profile-footer">
                             <div class="emergency-contact">
-                                <h4>Emergency Contact</h4>
+                                <h4>Guardian Info</h4>
                                 
                                 <div class="contact-item">
                                     <i class="fas fa-user"></i>
                                     <div>
-                                        <div style="font-weight: 600;">Robert Johnson</div>
-                                        <div style="font-size: 0.85rem; color: var(--text-light);">Father</div>
+                                        <div style="font-weight: 600;"><?php echo htmlspecialchars($student['parent_guardian']); ?></div>
+                                        <div style="font-size: 0.85rem; color: var(--text-light);">Guardian</div>
                                     </div>
                                 </div>
                                 
                                 <div class="contact-item">
                                     <i class="fas fa-phone"></i>
-                                    <div>+1 (555) 123-4567</div>
-                                </div>
-                                
-                                <div class="contact-item">
-                                    <i class="fas fa-envelope"></i>
-                                    <div>r.johnson@email.com</div>
+                                    <div><?php echo htmlspecialchars($student['contact_number']); ?></div>
                                 </div>
                             </div>
                         </div>
@@ -1230,95 +1243,48 @@ checkAccess('staff');
                             
                             <div class="academic-info-grid">
                                 <div class="academic-card">
-                                    <h4>Current GPA</h4>
-                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--primary-medium);">3.75 / 4.0</p>
-                                    <p style="font-size: 0.9rem; color: var(--text-light);">Rank: 5 out of 35 students</p>
+                                    <h4>Current Session</h4>
+                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--primary-medium);"><?php echo htmlspecialchars($student['session_of_year']); ?></p>
+                                    <p style="font-size: 0.9rem; color: var(--text-light);">Current Level: <?php echo htmlspecialchars($student['class_name']); ?></p>
                                 </div>
                                 
                                 <div class="academic-card">
                                     <h4>Overall Attendance</h4>
                                     <p style="font-size: 1.5rem; font-weight: 600; color: var(--success);">94.5%</p>
-                                    <p style="font-size: 0.9rem; color: var(--text-light);">Present: 142/150 days</p>
+                                    <p style="font-size: 0.9rem; color: var(--text-light);">Placeholder data</p>
                                 </div>
                                 
                                 <div class="academic-card">
                                     <h4>Current Grade</h4>
-                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--accent-blue);">Grade 10</p>
-                                    <p style="font-size: 0.9rem; color: var(--text-light);">Section A, Room 205</p>
-                                </div>
-                                
-                                <div class="academic-card">
-                                    <h4>Class Teacher</h4>
-                                    <p style="font-size: 1.1rem; font-weight: 600; color: var(--primary-dark);">Ms. Emily Johnson</p>
-                                    <p style="font-size: 0.9rem; color: var(--text-light);">emily.johnson@ttschool.edu</p>
+                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--accent-blue);"><?php echo htmlspecialchars($student['class_name']); ?></p>
+                                    <p style="font-size: 0.9rem; color: var(--text-light);">T&T School Management</p>
                                 </div>
                             </div>
                             
-                            <h4 style="margin: 30px 0 20px;">Current Term Grades</h4>
+                            <h4 style="margin: 30px 0 20px;">Recent Course Performance</h4>
+                            <p style="color: var(--text-light); margin-bottom: 20px;">Sample performance data below. For actual grades, please visit the Enter Results section.</p>
                             <div class="grades-table-container">
                                 <table class="grades-table">
                                     <thead>
                                         <tr>
                                             <th>Subject</th>
                                             <th>Teacher</th>
-                                            <th>Test 1</th>
-                                            <th>Test 2</th>
-                                            <th>Assignment</th>
-                                            <th>Final Exam</th>
-                                            <th>Total</th>
+                                            <th>Score</th>
                                             <th>Grade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <td>Mathematics</td>
-                                            <td>Mr. David Chen</td>
+                                            <td>Mr. John Teacher</td>
                                             <td>92</td>
-                                            <td>88</td>
-                                            <td>95</td>
-                                            <td>90</td>
-                                            <td>91.2</td>
                                             <td><span class="grade-badge grade-a">A</span></td>
                                         </tr>
                                         <tr>
                                             <td>Physics</td>
-                                            <td>Ms. Emily Johnson</td>
+                                            <td>Ms. Sarah Staff</td>
                                             <td>85</td>
-                                            <td>82</td>
-                                            <td>90</td>
-                                            <td>87</td>
-                                            <td>86.0</td>
                                             <td><span class="grade-badge grade-b">B</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Chemistry</td>
-                                            <td>Dr. Robert Smith</td>
-                                            <td>78</td>
-                                            <td>82</td>
-                                            <td>85</td>
-                                            <td>80</td>
-                                            <td>81.3</td>
-                                            <td><span class="grade-badge grade-b">B</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>English</td>
-                                            <td>Ms. Patricia Miller</td>
-                                            <td>88</td>
-                                            <td>90</td>
-                                            <td>92</td>
-                                            <td>85</td>
-                                            <td>88.8</td>
-                                            <td><span class="grade-badge grade-b">B</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>History</td>
-                                            <td>Mr. James Wilson</td>
-                                            <td>92</td>
-                                            <td>95</td>
-                                            <td>90</td>
-                                            <td>93</td>
-                                            <td>92.5</td>
-                                            <td><span class="grade-badge grade-a">A</span></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1353,7 +1319,7 @@ checkAccess('staff');
                             
                             <div class="attendance-calendar">
                                 <div class="calendar-header">
-                                    <div class="calendar-month">October 2023</div>
+                                    <div class="calendar-month"><?php echo date('F Y'); ?></div>
                                     <div style="display: flex; gap: 10px;">
                                         <button class="btn btn-secondary" style="padding: 8px 15px;">
                                             <i class="fas fa-chevron-left"></i>
@@ -1364,67 +1330,7 @@ checkAccess('staff');
                                     </div>
                                 </div>
                                 
-                                <div class="calendar-grid">
-                                    <div class="calendar-day-header">Sun</div>
-                                    <div class="calendar-day-header">Mon</div>
-                                    <div class="calendar-day-header">Tue</div>
-                                    <div class="calendar-day-header">Wed</div>
-                                    <div class="calendar-day-header">Thu</div>
-                                    <div class="calendar-day-header">Fri</div>
-                                    <div class="calendar-day-header">Sat</div>
-                                    
-                                    <!-- Empty days -->
-                                    <div class="calendar-day"></div>
-                                    <div class="calendar-day"></div>
-                                    
-                                    <!-- October 1-31 -->
-                                    <div class="calendar-day present">1</div>
-                                    <div class="calendar-day present">2</div>
-                                    <div class="calendar-day present">3</div>
-                                    <div class="calendar-day present">4</div>
-                                    <div class="calendar-day present">5</div>
-                                    <div class="calendar-day absent">6</div>
-                                    <div class="calendar-day">7</div>
-                                    <div class="calendar-day">8</div>
-                                    <div class="calendar-day present">9</div>
-                                    <div class="calendar-day present">10</div>
-                                    <div class="calendar-day present">11</div>
-                                    <div class="calendar-day present">12</div>
-                                    <div class="calendar-day present">13</div>
-                                    <div class="calendar-day present">14</div>
-                                    <div class="calendar-day">15</div>
-                                    <div class="calendar-day present">16</div>
-                                    <div class="calendar-day today">17</div>
-                                    <div class="calendar-day">18</div>
-                                    <div class="calendar-day">19</div>
-                                    <div class="calendar-day">20</div>
-                                    <div class="calendar-day">21</div>
-                                    <div class="calendar-day">22</div>
-                                    <div class="calendar-day">23</div>
-                                    <div class="calendar-day">24</div>
-                                    <div class="calendar-day">25</div>
-                                    <div class="calendar-day">26</div>
-                                    <div class="calendar-day">27</div>
-                                    <div class="calendar-day">28</div>
-                                    <div class="calendar-day">29</div>
-                                    <div class="calendar-day">30</div>
-                                    <div class="calendar-day">31</div>
-                                </div>
-                                
-                                <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 0.9rem;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--success);"></div>
-                                        <span>Present</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--danger);"></div>
-                                        <span>Absent</span>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="background-color: var(--primary-light); color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;">17</div>
-                                        <span>Today</span>
-                                    </div>
-                                </div>
+                                <p style="text-align: center; padding: 20px; color: var(--text-light);">Attendance visualization placeholder for current month.</p>
                             </div>
                         </div>
                         
@@ -1437,46 +1343,10 @@ checkAccess('staff');
                                     <div class="behavior-content">
                                         <div class="behavior-header">
                                             <div class="behavior-title">Excellent Class Participation</div>
-                                            <div class="behavior-date">Oct 15, 2023</div>
+                                            <div class="behavior-date"><?php echo date('M d, Y'); ?></div>
                                         </div>
                                         <div class="behavior-description">
-                                            Michael actively participated in class discussions and demonstrated excellent understanding of the topic. He helped other students who were struggling with the concepts.
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="behavior-item neutral">
-                                    <div class="behavior-content">
-                                        <div class="behavior-header">
-                                            <div class="behavior-title">Late Submission</div>
-                                            <div class="behavior-date">Oct 10, 2023</div>
-                                        </div>
-                                        <div class="behavior-description">
-                                            Submitted Physics assignment 2 days late due to illness. Provided medical certificate.
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="behavior-item positive">
-                                    <div class="behavior-content">
-                                        <div class="behavior-header">
-                                            <div class="behavior-title">Science Fair Winner</div>
-                                            <div class="behavior-date">Sept 28, 2023</div>
-                                        </div>
-                                        <div class="behavior-description">
-                                            Won first prize in school science fair for project "Renewable Energy Solutions". Demonstrated exceptional creativity and scientific understanding.
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="behavior-item negative">
-                                    <div class="behavior-content">
-                                        <div class="behavior-header">
-                                            <div class="behavior-title">Disruptive Behavior</div>
-                                            <div class="behavior-date">Sept 15, 2023</div>
-                                        </div>
-                                        <div class="behavior-description">
-                                            Was disruptive during English class. Spoke to student and parent. Behavior improved significantly after discussion.
+                                            <?php echo htmlspecialchars($student['full_name']); ?> actively participated in class discussions and demonstrated excellent understanding.
                                         </div>
                                     </div>
                                 </div>
@@ -1490,69 +1360,7 @@ checkAccess('staff');
                             <div class="medical-info">
                                 <div class="medical-card">
                                     <h4><i class="fas fa-file-medical"></i> Medical History</h4>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Allergies</div>
-                                        <div class="medical-value">Peanuts, Penicillin</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Chronic Conditions</div>
-                                        <div class="medical-value">Mild asthma (controlled with inhaler)</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Medications</div>
-                                        <div class="medical-value">Albuterol inhaler (as needed)</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Last Physical Exam</div>
-                                        <div class="medical-value">August 15, 2023</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="medical-card">
-                                    <h4><i class="fas fa-user-md"></i> Health Provider</h4>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Primary Physician</div>
-                                        <div class="medical-value">Dr. Amanda Roberts</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Clinic</div>
-                                        <div class="medical-value">City Health Center</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Phone</div>
-                                        <div class="medical-value">+1 (555) 987-6543</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Insurance</div>
-                                        <div class="medical-value">Family Health Plan #FH-789012</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="medical-card">
-                                    <h4><i class="fas fa-heartbeat"></i> Vaccination Record</h4>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Last Tetanus Shot</div>
-                                        <div class="medical-value">March 2022</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">COVID-19 Vaccination</div>
-                                        <div class="medical-value">Fully vaccinated (Boosted: Jan 2023)</div>
-                                    </div>
-                                    
-                                    <div class="medical-item">
-                                        <div class="medical-label">Flu Shot</div>
-                                        <div class="medical-value">October 2023</div>
-                                    </div>
+                                    <p style="color: var(--text-light);">No records found.</p>
                                 </div>
                             </div>
                         </div>
@@ -1562,113 +1370,7 @@ checkAccess('staff');
                             <h3 style="margin-bottom: 25px;">Student Documents</h3>
                             
                             <div class="documents-grid">
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-file-pdf"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Admission Form</h5>
-                                        <p>PDF • 245 KB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-file-image"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Birth Certificate</h5>
-                                        <p>Image • 1.2 MB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-file-medical"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Medical Records</h5>
-                                        <p>PDF • 856 KB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-file-contract"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Parent Consent Forms</h5>
-                                        <p>PDF • 320 KB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-award"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Achievement Certificates</h5>
-                                        <p>PDF • 1.5 MB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="document-card">
-                                    <div class="document-icon">
-                                        <i class="fas fa-file-alt"></i>
-                                    </div>
-                                    <div class="document-info">
-                                        <h5>Previous School Records</h5>
-                                        <p>PDF • 2.1 MB</p>
-                                        <div class="document-actions">
-                                            <button class="doc-action-btn view">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="doc-action-btn download">
-                                                <i class="fas fa-download"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <p style="color: var(--text-light);">No documents uploaded.</p>
                             </div>
                         </div>
                     </div>
@@ -1684,35 +1386,7 @@ checkAccess('staff');
                     </div>
                     
                     <div class="notes-list" id="notesList">
-                        <div class="note-item">
-                            <div class="note-header">
-                                <div class="note-author">Ms. Emily Johnson (Class Teacher)</div>
-                                <div class="note-date">October 12, 2023</div>
-                            </div>
-                            <div class="note-content">
-                                Michael has shown significant improvement in his Physics coursework. He's been actively participating in class and his recent test scores reflect his dedication. Keep up the good work!
-                            </div>
-                        </div>
-                        
-                        <div class="note-item">
-                            <div class="note-header">
-                                <div class="note-author">Mr. David Chen (Math Teacher)</div>
-                                <div class="note-date">October 5, 2023</div>
-                            </div>
-                            <div class="note-content">
-                                Excelled in the recent mathematics competition. Demonstrated advanced problem-solving skills. Recommended for advanced math class next semester.
-                            </div>
-                        </div>
-                        
-                        <div class="note-item">
-                            <div class="note-header">
-                                <div class="note-author">School Counselor</div>
-                                <div class="note-date">September 20, 2023</div>
-                            </div>
-                            <div class="note-content">
-                                Had a positive counseling session regarding future career options. Michael shows interest in engineering fields. Will schedule follow-up meeting with parents to discuss university preparation.
-                            </div>
-                        </div>
+                        <p style="color: var(--text-light); text-align: center; padding: 20px;">No staff notes for this student yet.</p>
                     </div>
                     
                     <div class="note-form" id="noteForm" style="display: none;">
@@ -1726,7 +1400,7 @@ checkAccess('staff');
                 
                 <!-- Footer -->
                 <div class="dashboard-footer">
-                    <p>&copy; 2023 T&T School Management System. All rights reserved. | Student Profile View v1.5</p>
+                    <p>&copy; <?php echo date('Y'); ?> T&T School Management System. All rights reserved. | Student Profile View</p>
                 </div>
             </div>
         </div>
@@ -1746,33 +1420,27 @@ checkAccess('staff');
         const newNote = document.getElementById('newNote');
         const notesList = document.getElementById('notesList');
         
-        // Document action buttons
-        const docViewBtns = document.querySelectorAll('.doc-action-btn.view');
-        const docDownloadBtns = document.querySelectorAll('.doc-action-btn.download');
-        
-        // Calendar navigation
-        const calendarPrevBtn = document.querySelector('.btn-secondary .fa-chevron-left')?.parentElement;
-        const calendarNextBtn = document.querySelector('.btn-secondary .fa-chevron-right')?.parentElement;
-        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
-            setupDocumentActions();
-            setupCalendarNavigation();
         });
         
         // Setup event listeners
         function setupEventListeners() {
             // Mobile sidebar toggle
-            menuToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                overlay.classList.toggle('active');
-            });
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                });
+            }
             
-            overlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                overlay.classList.remove('active');
-            });
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
             
             // Tab switching
             tabBtns.forEach(btn => {
@@ -1796,52 +1464,6 @@ checkAccess('staff');
             });
             
             saveNoteBtn.addEventListener('click', saveNote);
-            
-            // Close sidebar when clicking on a menu item (for mobile)
-            document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    if (window.innerWidth < 992) {
-                        sidebar.classList.remove('active');
-                        overlay.classList.remove('active');
-                    }
-                });
-            });
-        }
-        
-        // Setup document action buttons
-        function setupDocumentActions() {
-            // View document buttons
-            docViewBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const documentCard = this.closest('.document-card');
-                    const documentName = documentCard.querySelector('h5').textContent;
-                    alert(`Viewing document: ${documentName}`);
-                });
-            });
-            
-            // Download document buttons
-            docDownloadBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const documentCard = this.closest('.document-card');
-                    const documentName = documentCard.querySelector('h5').textContent;
-                    alert(`Downloading document: ${documentName}`);
-                });
-            });
-        }
-        
-        // Setup calendar navigation
-        function setupCalendarNavigation() {
-            if (calendarPrevBtn) {
-                calendarPrevBtn.addEventListener('click', () => {
-                    alert('Navigating to previous month');
-                });
-            }
-            
-            if (calendarNextBtn) {
-                calendarNextBtn.addEventListener('click', () => {
-                    alert('Navigating to next month');
-                });
-            }
         }
         
         // Switch between tabs
@@ -1864,7 +1486,7 @@ checkAccess('staff');
                 return;
             }
             
-            // Create new note element
+            // For now, this is just a UI simulation
             const noteItem = document.createElement('div');
             noteItem.className = 'note-item';
             
@@ -1875,15 +1497,19 @@ checkAccess('staff');
                 day: 'numeric' 
             });
             
+            // Clear empty message if first note
+            if (notesList.querySelector('p')) {
+                notesList.innerHTML = '';
+            }
+
             noteItem.innerHTML = `
                 <div class="note-header">
-                    <div class="note-author">Mr. David Chen (Current User)</div>
+                    <div class="note-author">Staff Member</div>
                     <div class="note-date">${formattedDate}</div>
                 </div>
                 <div class="note-content">${noteText}</div>
             `;
             
-            // Add to top of notes list
             notesList.prepend(noteItem);
             
             // Reset form
@@ -1891,44 +1517,15 @@ checkAccess('staff');
             noteForm.style.display = 'none';
             addNoteBtn.style.display = 'flex';
             
-            // Show success message
-            alert('Note saved successfully!');
+            alert('Note saved successfully (Simulated)!');
         }
         
         // Handle window resize
         window.addEventListener('resize', function() {
-            if(window.innerWidth >= 992) {
+            if(window.innerWidth >= 992 && sidebar) {
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
             }
-        });
-        
-        // Print functionality
-        document.querySelector('.fa-print').closest('.header-action').addEventListener('click', function() {
-            if (confirm('Print student profile?')) {
-                // In a real app, this would open a print dialog
-                alert('Opening print dialog...');
-            }
-        });
-        
-        // Share functionality
-        document.querySelector('.fa-share-alt').closest('.header-action').addEventListener('click', function() {
-            alert('Share options would appear here.');
-        });
-        
-        // Edit profile button
-        document.querySelector('.btn-secondary .fa-edit').closest('.btn').addEventListener('click', function() {
-            alert('Opening edit profile form...');
-        });
-        
-        // Contact parent button
-        document.querySelector('.btn-primary .fa-envelope').closest('.btn').addEventListener('click', function() {
-            alert('Opening parent contact form...');
-        });
-        
-        // Generate report button
-        document.querySelector('.btn-success .fa-file-pdf').closest('.btn').addEventListener('click', function() {
-            alert('Generating student report PDF...');
         });
     </script>
 </body>

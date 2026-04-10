@@ -341,13 +341,13 @@
     </style>
 </head>
 <body>
-
+<?php include '../include/staff_sidebar.php'; ?>
 <div class="timetable-container">
     <div class="timetable-header">
         <div class="staff-info">
             <div class="staff-details">
                 <h1><i class="fas fa-calendar-week"></i> My Weekly Timetable</h1>
-                <p><i class="fas fa-chalkboard-user"></i> Prof. Sophia Lin · Computer Science · Staff ID: TCH-0042</p>
+                <p><i class="fas fa-chalkboard-user"></i> <?php echo htmlspecialchars($staff_name); ?> · <?php echo htmlspecialchars($staff_subject); ?> · Staff ID: <?php echo htmlspecialchars($staff_id_display); ?></p>
             </div>
             <div class="semester-badge">
                 <i class="fas fa-graduation-cap"></i> Spring 2025
