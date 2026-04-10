@@ -4,14 +4,98 @@ require_once '../include/config.php';
 checkAccess('staff');
 
 $staff_id = $_SESSION['user_id'];
+
+// Create student_results table if not exists
+try {
+    $pdo->query("CREATE TABLE IF NOT EXISTS `student_results` (
+      `result_id` int(11) NOT NULL AUTO_INCREMENT,
+      `student_id` int(11) NOT NULL,
+      `staff_id` int(11) NOT NULL,
+      `subject` varchar(100) NOT NULL,
+      `test_name` varchar(100) NOT NULL,
+      `score` decimal(5,2) NOT NULL,
+      `grade` varchar(2) NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (`result_id`),
+      KEY `student_id` (`student_id`),
+      KEY `staff_id` (`staff_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+} catch (PDOException $e) {
+    // Ignore error
+}
+
+// Fetch staff info
 $query = "SELECT * FROM staff WHERE staff_id = ?";
 $stmt = $pdo->prepare($query);
 $stmt->execute([$staff_id]);
 $staff = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $staff_name_display = $staff['full_name'] ?? 'Staff Member';
-$staff_position_display = $staff['position'] ?? 'Teacher';
-$staff_subject_display = $staff['subject'] ?? '';
+$staff_subject = $staff['subject'] ?? '';
+
+// Handle Add Result Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_result') {
+    $student_id = intval($_POST['student_id']);
+    $subject = $staff_subject;
+    $test_name = trim($_POST['test_name']);
+    $score = floatval($_POST['score']);
+    $result_date = $_POST['result_date'];
+
+    // Grading Logic: > 80 is A, else > 70 is B, else > 60 is C, else > 35 is D, < 34 is F
+    $grade = 'F';
+    if ($score > 80) $grade = 'A';
+    elseif ($score > 70) $grade = 'B';
+    elseif ($score > 60) $grade = 'C';
+    elseif ($score > 35) $grade = 'D';
+    else $grade = 'F';
+
+    if ($student_id > 0 && !empty($test_name)) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO student_results (student_id, staff_id, subject, test_name, score, grade, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$student_id, $staff_id, $subject, $test_name, $score, $grade, $result_date]);
+            header("Location: enter_results.php?success=1");
+            exit;
+        } catch (PDOException $e) {
+            $error_message = "Error adding result: " . $e->getMessage();
+        }
+    }
+}
+
+// Handle Delete
+if (isset($_GET['delete'])) {
+    $delete_id = intval($_GET['delete']);
+    $stmt = $pdo->prepare("DELETE FROM student_results WHERE result_id = ? AND staff_id = ?");
+    $stmt->execute([$delete_id, $staff_id]);
+    header("Location: enter_results.php?deleted=1");
+    exit;
+}
+
+// Fetch Enrolled Students for this Staff's courses
+// We assume staff is instructor for courses, and students register for those courses
+$students_query = "
+    SELECT DISTINCT s.student_id, s.full_name 
+    FROM students s
+    JOIN course_registrations cr ON s.student_id = cr.student_id
+    JOIN courses c ON cr.course_id = c.course_id
+    WHERE c.instructor_id = ?
+    ORDER BY s.full_name ASC
+";
+$stmt = $pdo->prepare($students_query);
+$stmt->execute([$staff_id]);
+$enrolled_students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch existing results for this staff
+$results_query = "
+    SELECT r.*, s.full_name as student_name 
+    FROM student_results r
+    JOIN students s ON r.student_id = s.student_id
+    WHERE r.staff_id = ?
+    ORDER BY r.created_at DESC
+";
+$stmt = $pdo->prepare($results_query);
+$stmt->execute([$staff_id]);
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -306,7 +390,7 @@ $staff_subject_display = $staff['subject'] ?? '';
             transition: all 0.3s;
         }
 
-        .input-group input:focus {
+        .input-group input:focus, .input-group select:focus {
             outline: none;
             border-color: var(--primary-medium);
             box-shadow: 0 0 0 3px rgba(0, 80, 158, 0.1);
@@ -392,7 +476,6 @@ $staff_subject_display = $staff['subject'] ?? '';
             transition: all 0.3s;
         }
 
-        .edit-icon { color: var(--primary-medium); background: rgba(0, 80, 158, 0.1); }
         .delete-icon { color: var(--danger); background: rgba(220, 53, 69, 0.1); }
 
         @media (max-width: 992px) {
@@ -437,54 +520,102 @@ $staff_subject_display = $staff['subject'] ?? '';
             </div>
         </div>
 
+        <?php if (isset($_GET['success'])): ?>
+            <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb;">
+                <i class="fas fa-check-circle"></i> Result added successfully!
+            </div>
+        <?php endif; ?>
+
+        <?php if (isset($_GET['deleted'])): ?>
+            <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+                <i class="fas fa-trash"></i> Result deleted successfully!
+            </div>
+        <?php endif; ?>
+
         <div class="card">
             <div class="card-header">
                 <h2><i class="fas fa-upload"></i> Upload New Test Result</h2>
             </div>
             <div class="card-body">
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Student Name *</label>
-                        <input type="text" id="studentName" placeholder="e.g. Michael Johnson">
+                <form method="POST">
+                    <input type="hidden" name="action" value="add_result">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Student Name *</label>
+                            <select name="student_id" required>
+                                <option value="">Select Student</option>
+                                <?php foreach ($enrolled_students as $std): ?>
+                                    <option value="<?php echo $std['student_id']; ?>"><?php echo htmlspecialchars($std['full_name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Subject *</label>
+                            <input type="text" name="subject" value="<?php echo htmlspecialchars($staff_subject); ?>" readonly style="background-color: #f0f0f0;">
+                        </div>
+                        <div class="input-group">
+                            <label>Test Name *</label>
+                            <input type="text" name="test_name" placeholder="e.g. Midterm" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Score (%) *</label>
+                            <input type="number" name="score" min="0" max="100" step="0.01" placeholder="0-100" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Date</label>
+                            <input type="date" name="result_date" value="<?php echo date('Y-m-d'); ?>" required>
+                        </div>
                     </div>
-                    <div class="input-group">
-                        <label>Subject *</label>
-                        <input type="text" id="subject" value="<?php echo htmlspecialchars($staff_subject_display); ?>" placeholder="e.g. Physics">
+                    <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                        <button type="reset" class="btn btn-outline">Clear</button>
+                        <button type="submit" class="btn btn-primary">Save Result</button>
                     </div>
-                    <div class="input-group">
-                        <label>Test Name *</label>
-                        <input type="text" id="testName" placeholder="e.g. Midterm">
-                    </div>
-                    <div class="input-group">
-                        <label>Score (%) *</label>
-                        <input type="number" id="score" min="0" max="100" placeholder="0-100">
-                    </div>
-                    <div class="input-group">
-                        <label>Date</label>
-                        <input type="date" id="resultDate" value="<?php echo date('Y-m-d'); ?>">
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 15px;">
-                    <button class="btn btn-outline" id="clearFormBtn">Clear</button>
-                    <button class="btn btn-primary" id="saveResultBtn">Save Result</button>
-                </div>
+                </form>
             </div>
         </div>
 
         <div class="card">
             <div class="card-header">
                 <h2><i class="fas fa-table-list"></i> Uploaded Results</h2>
-                <div><span id="recordCount">0</span> records</div>
+                <div><span><?php echo count($results); ?></span> records</div>
             </div>
             <div class="card-body">
                 <div class="table-wrapper">
                     <table class="results-table">
                         <thead>
                             <tr>
-                                <th>Student</th><th>Subject</th><th>Test</th><th>Score</th><th>Grade</th><th>Date</th><th>Actions</th>
+                                <th>Student</th>
+                                <th>Subject</th>
+                                <th>Test</th>
+                                <th>Score</th>
+                                <th>Grade</th>
+                                <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody"></tbody>
+                        <tbody>
+                            <?php if (empty($results)): ?>
+                                <tr>
+                                    <td colspan="7" style="text-align:center; padding: 30px;">No results found</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($results as $res): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($res['student_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($res['subject']); ?></td>
+                                        <td><?php echo htmlspecialchars($res['test_name']); ?></td>
+                                        <td><strong><?php echo number_format($res['score'], 1); ?>%</strong></td>
+                                        <td><span class="grade-badge"><?php echo $res['grade']; ?></span></td>
+                                        <td><?php echo date('M d, Y', strtotime($res['created_at'])); ?></td>
+                                        <td class="action-icons">
+                                            <a href="?delete=<?php echo $res['result_id']; ?>" onclick="return confirm('Delete this result?')" class="delete-icon" style="text-decoration: none;">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -513,73 +644,6 @@ $staff_subject_display = $staff['subject'] ?? '';
         });
     }
 
-    // Results logic
-    const STORAGE_KEY = 'tt_school_results';
-    let resultsArray = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
-        { id: 1, student: "Michael Johnson", subject: "Physics", testName: "Midterm", score: 88, date: "2025-03-10", grade: "A-" },
-        { id: 2, student: "Sarah Williams", subject: "Mathematics", testName: "Quiz 2", score: 92, date: "2025-03-12", grade: "A" }
-    ];
-
-    function getGrade(score) {
-        if(score >= 90) return "A";
-        if(score >= 80) return "B";
-        if(score >= 70) return "C";
-        if(score >= 60) return "D";
-        return "F";
-    }
-
-    function renderTable() {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = resultsArray.length ? resultsArray.map(item => `
-            <tr>
-                <td>${item.student}</td>
-                <td>${item.subject}</td>
-                <td>${item.testName}</td>
-                <td><strong>${item.score}%</strong></td>
-                <td><span class="grade-badge">${item.grade}</span></td>
-                <td>${item.date}</td>
-                <td class="action-icons">
-                    <i class="fas fa-edit edit-icon" onclick="alert('Edit logic goes here')"></i>
-                    <i class="fas fa-trash-alt delete-icon" onclick="deleteItem(${item.id})"></i>
-                </td>
-            </tr>
-        `).join('') : '<tr><td colspan="7" style="text-align:center; padding: 30px;">No results found</td></tr>';
-        document.getElementById('recordCount').innerText = resultsArray.length;
-    }
-
-    window.deleteItem = (id) => {
-        if(confirm('Delete this record?')) {
-            resultsArray = resultsArray.filter(item => item.id !== id);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(resultsArray));
-            renderTable();
-        }
-    };
-
-    document.getElementById('saveResultBtn').addEventListener('click', () => {
-        const student = document.getElementById('studentName').value.trim();
-        const subject = document.getElementById('subject').value.trim();
-        const test = document.getElementById('testName').value.trim();
-        const score = parseFloat(document.getElementById('score').value);
-        const date = document.getElementById('resultDate').value;
-
-        if(student && subject && test && !isNaN(score)) {
-            resultsArray.unshift({ id: Date.now(), student, subject, testName: test, score, date, grade: getGrade(score) });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(resultsArray));
-            renderTable();
-            document.getElementById('studentName').value = '';
-            document.getElementById('score').value = '';
-            document.getElementById('testName').value = '';
-        } else {
-            alert('Please fill all required fields');
-        }
-    });
-
-    document.getElementById('clearFormBtn').addEventListener('click', () => {
-        document.getElementById('studentName').value = '';
-        document.getElementById('testName').value = '';
-        document.getElementById('score').value = '';
-    });
-
     // Handle window resize
     window.addEventListener('resize', function() {
         if(window.innerWidth >= 992 && sidebar) {
@@ -587,8 +651,6 @@ $staff_subject_display = $staff['subject'] ?? '';
             overlay.classList.remove('active');
         }
     });
-
-    renderTable();
 </script>
 </body>
 </html>
