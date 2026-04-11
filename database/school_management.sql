@@ -157,6 +157,23 @@ CREATE TABLE IF NOT EXISTS `student_notes` (
   KEY `staff_id` (`staff_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `school_fees` (
+  `fee_id` int(11) NOT NULL AUTO_INCREMENT,
+  `fee_amount` decimal(10,2) NOT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`fee_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `school_fees` (`fee_id`, `fee_amount`) VALUES (1, 47000.00) ON DUPLICATE KEY UPDATE `fee_amount` = `fee_amount`;
+
+CREATE TABLE IF NOT EXISTS `settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` varchar(255) NOT NULL,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES ('school_fee', '47000') ON DUPLICATE KEY UPDATE `setting_value` = `setting_value`;
+
 -- --------------------------------------------------------
 -- Demo Data
 -- --------------------------------------------------------

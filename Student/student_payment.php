@@ -1,520 +1,412 @@
+<?php
+require_once '../auth/session.php';
+require_once '../include/config.php';
+checkAccess('student');
+
+// Fetch current school fee
+$stmt = $pdo->query("SELECT fee_amount FROM school_fees WHERE fee_id = 1");
+$schoolFee = $stmt->fetchColumn() ?: 47000.00;
+
+// Get student details
+$student_id = $_SESSION['user_id'];
+$stmt = $pdo->prepare("SELECT * FROM students WHERE student_id = ?");
+$stmt->execute([$student_id]);
+$student = $stmt->fetch();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>T&T School – Admin Fee Payment Overview</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Pay School Fees · T&T Student Portal</title>
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/student-dashboard.css">
+    <!-- Paystack JS -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ----- T&T COLOR SCHEME (exact match) ----- */
+        :root {
+            --primary-dark: #003366;
+            --primary-medium: #00509E;
+            --primary-light: #4D8FCC;
+            --accent-blue: #1E88E5;
+            --light-bg: #F0F8FF;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --white: #FFFFFF;
+            --shadow: rgba(0, 51, 102, 0.1);
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #eef2ff 0%, #d9e4f5 100%);
-            padding: 30px 20px;
-            color: #1e293b;
+            font-family: 'Open Sans', sans-serif;
+            color: var(--text-dark);
+            background-color: #f5f7fb;
         }
 
-        .dashboard-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
+        /* ----- PAYMENT CARD (student view) ----- */
+        .payment-container {
+            max-width: 720px;
+            width: 100%;
+            margin: 50px auto;
         }
 
-        /* header */
-        .top-bar {
-            background: linear-gradient(98deg, #0b2b44 0%, #0a4c6e 100%);
-            padding: 28px 32px;
-            color: white;
+        .fee-card {
+            background: var(--white);
+            border-radius: 28px;
+            box-shadow: 0 20px 35px var(--shadow);
+            padding: 36px 32px;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .current-fee-banner {
+            background: linear-gradient(145deg, var(--light-bg), #e6f0ff);
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 30px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
+            border-left: 8px solid var(--primary-medium);
         }
-        .logo-area h1 {
-            font-size: 1.8rem;
+
+        .fee-detail h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .fee-amount-large {
+            font-size: 2.5rem;
             font-weight: 700;
+            color: var(--primary-dark);
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.2;
         }
-        .logo-area p {
-            font-size: 0.85rem;
-            opacity: 0.85;
-            margin-top: 5px;
+
+        .fee-amount-large small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--text-light);
+            margin-left: 8px;
         }
-        .admin-badge {
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(4px);
-            padding: 10px 24px;
+
+        .outstanding-tag {
+            background: rgba(220, 53, 69, 0.08);
+            padding: 8px 16px;
             border-radius: 40px;
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-light);
+            font-size: 1.2rem;
+        }
+
+        .payment-input {
+            width: 100%;
+            padding: 16px 20px 16px 55px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            border: 2px solid #e0e7ef;
+            border-radius: 18px;
+            background: #fbfdff;
+            font-family: 'Open Sans', sans-serif;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .payment-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(30, 136, 229, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 28px;
+            border-radius: 18px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 8px 18px var(--shadow);
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn i {
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(to right, var(--primary-medium), var(--accent-blue));
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(0, 51, 102, 0.2);
+        }
+
+        .secure-note {
             display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Success message */
+        .toast-message {
+            background: var(--success);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 50px;
+            margin-top: 20px;
+            display: inline-flex;
             align-items: center;
             gap: 12px;
             font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 8px 16px rgba(40,167,69,0.2);
         }
 
-        /* content */
-        .main-content {
-            padding: 32px;
+        .toast-message.show {
+            opacity: 1;
         }
 
-        /* summary cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        .stat-card {
-            background: #f8fcff;
-            border-radius: 24px;
-            padding: 24px 20px;
-            text-align: center;
-            border: 1px solid #e2edf7;
-            transition: 0.2s;
-        }
-        .stat-card i {
-            font-size: 2rem;
-            color: #2c7da0;
-            margin-bottom: 12px;
-        }
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #0b2b44;
-        }
-        .stat-label {
-            font-size: 0.9rem;
-            color: #4a6f8a;
-        }
-
-        /* filters */
-        .filter-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 28px;
-        }
-        .filter-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        .filter-group select, .filter-group input {
-            padding: 10px 16px;
-            border-radius: 40px;
-            border: 1px solid #cbdde9;
-            background: white;
-            font-family: 'Inter', sans-serif;
-        }
-        .btn {
-            border: none;
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary {
-            background: linear-gradient(105deg, #0b2b44, #1b6b8f);
-            color: white;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-        }
-        .btn-outline {
-            border: 1px solid #2c7da0;
-            background: white;
-            color: #1e4a6b;
-        }
-
-        /* table */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 20px;
-            border: 1px solid #e2edf7;
-        }
-        .payments-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .payments-table th {
-            text-align: left;
-            padding: 16px 12px;
-            background: #f0f7fe;
-            color: #0b2b44;
-        }
-        .payments-table td {
-            padding: 14px 12px;
-            border-bottom: 1px solid #e9eff5;
-            vertical-align: middle;
-        }
-        .status-paid {
-            background: #e6f4ea;
-            color: #2e7d32;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .status-unpaid {
-            background: #fff0f0;
-            color: #c0392b;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .action-icons i {
-            font-size: 1.2rem;
-            margin: 0 6px;
-            cursor: pointer;
-            padding: 6px;
-            border-radius: 30px;
-            transition: 0.1s;
-        }
-        .action-icons .fa-check-circle {
-            color: #2e7d32;
-        }
-        .action-icons .fa-edit {
-            color: #2c7da0;
-        }
-        .action-icons i:hover {
-            background: #eef2ff;
-        }
-
-        /* modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal.active {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            max-width: 500px;
-            width: 90%;
-            border-radius: 32px;
-            padding: 28px;
-        }
-        .modal-content h3 {
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            font-weight: 600;
-            display: block;
-            margin-bottom: 6px;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid #cbdde9;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 24px;
-        }
-
-        @media (max-width: 700px) {
-            .main-content { padding: 20px; }
-            .filter-bar { flex-direction: column; align-items: stretch; }
+        /* Responsive */
+        @media (max-width: 600px) {
+            .fee-card { padding: 24px 20px; }
+            .fee-amount-large { font-size: 2.2rem; }
+            .current-fee-banner { flex-direction: column; align-items: flex-start; gap: 15px; }
         }
     </style>
 </head>
 <body>
-<div class="dashboard-container">
-    <div class="top-bar">
-        <div class="logo-area">
-            <h1><i class="fas fa-chalkboard-user"></i> T&T School</h1>
-            <p>Admin – Fee Payment Overview</p>
-        </div>
-        <div class="admin-badge">
-            <i class="fas fa-user-shield"></i>
-            <span>Admin: Said Umar</span>
-        </div>
-    </div>
+    <div class="container">
+        <!-- Sidebar -->
+        <?php include '../include/student-sidebar.php'; ?>
+        
+        <!-- Overlay for mobile -->
+        <div class="overlay" id="overlay"></div>
 
-    <div class="main-content">
-        <!-- stats -->
-        <div class="stats-grid" id="statsGrid"></div>
-
-        <!-- filter and actions -->
-        <div class="filter-bar">
-            <div class="filter-group">
-                <label><i class="fas fa-filter"></i> Show:</label>
-                <select id="filterStatus">
-                    <option value="all">All Students</option>
-                    <option value="paid">Paid Only</option>
-                    <option value="unpaid">Unpaid Only</option>
-                </select>
-                <input type="text" id="searchInput" placeholder="Search name or ID" style="width: 200px;">
+        <div class="main-content" id="mainContent">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h1>Pay School Fees</h1>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-action"><i class="fas fa-bell"></i></div>
+                    <div class="header-action"><i class="fas fa-user-graduate"></i></div>
+                </div>
             </div>
-            <div>
-                <button class="btn btn-primary" id="addPaymentBtn"><i class="fas fa-plus-circle"></i> Add Payment Record</button>
-                <button class="btn btn-outline" id="refreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+
+            <div class="dashboard-content">
+                <div class="payment-container">
+                    <!-- Main Payment Card -->
+                    <div class="fee-card">
+                        <div class="current-fee-banner">
+                            <div class="fee-detail">
+                                <h3><i class="fas fa-file-invoice" style="margin-right: 8px;"></i>Annual Tuition (2024‑2025)</h3>
+                                <div class="fee-amount-large">
+                                    ₦<?php echo number_format($schoolFee, 2); ?>
+                                    <small>NGN</small>
+                                </div>
+                            </div>
+                            <div class="outstanding-tag">
+                                <i class="fas fa-exclamation-circle"></i> Outstanding: ₦<?php echo number_format($schoolFee, 2); ?>
+                            </div>
+                        </div>
+
+                        <form id="paymentForm">
+                            <!-- Amount to pay -->
+                            <div class="form-group">
+                                <label for="paymentAmount">Amount to pay</label>
+                                <div class="input-wrapper">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <input type="number" 
+                                           id="paymentAmount" 
+                                           class="payment-input" 
+                                           placeholder="Enter amount" 
+                                           step="0.01" 
+                                           min="0.01" 
+                                           value="<?php echo $schoolFee; ?>" 
+                                           required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" id="payBtn">
+                                <i class="fas fa-lock"></i> Pay ₦<?php echo number_format($schoolFee, 2); ?> Now
+                            </button>
+
+                            <div class="secure-note">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Secure SSL encrypted payment via Paystack</span>
+                            </div>
+                        </form>
+
+                        <!-- Success toast -->
+                        <div class="toast-message" id="successToast">
+                            <i class="fas fa-check-circle"></i> Payment successful! Receipt sent to your email.
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-footer">
+                    <p>© 2025 T&T School Management System · Student Fee Payment</p>
+                </div>
             </div>
         </div>
-
-        <!-- student table -->
-        <div class="table-wrapper">
-            <table class="payments-table" id="studentTable">
-                <thead>
-                    <tr><th>Student ID</th><th>Student Name</th><th>Class</th><th>Amount Paid (₦)</th><th>Payment Date</th><th>Status</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
     </div>
-</div>
-
-<!-- Modal for adding/editing payment -->
-<div id="paymentModal" class="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle"><i class="fas fa-credit-card"></i> Record Payment</h3>
-        <input type="hidden" id="editStudentId">
-        <div class="form-group">
-            <label>Student Name *</label>
-            <input type="text" id="modalStudentName" placeholder="Full name">
-        </div>
-        <div class="form-group">
-            <label>Student ID *</label>
-            <input type="text" id="modalStudentId" placeholder="e.g. STU-001">
-        </div>
-        <div class="form-group">
-            <label>Class *</label>
-            <input type="text" id="modalClass" placeholder="Grade 10A">
-        </div>
-        <div class="form-group">
-            <label>Amount Paid (₦) *</label>
-            <input type="number" id="modalAmount" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-            <label>Payment Date *</label>
-            <input type="date" id="modalDate">
-        </div>
-        <div class="modal-buttons">
-            <button class="btn btn-outline" id="closeModalBtn">Cancel</button>
-            <button class="btn btn-primary" id="savePaymentBtn">Save Payment</button>
-        </div>
-    </div>
-</div>
 
 <script>
-    // ---------- STORAGE ----------
-    const STORAGE_KEY = 'tt_fee_payments';
-    let students = []; // each: { id, studentId, name, class, amount, date, status }
+    (function(){
+        "use strict";
 
-    // load initial demo data if empty
-    function loadData() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if(stored) {
-            students = JSON.parse(stored);
-        } else {
-            // sample students (some paid, some unpaid)
-            students = [
-                { id: 1, studentId: "STU-001", name: "Michael Johnson", class: "Grade 10A", amount: 150000, date: "2025-03-10", status: "paid" },
-                { id: 2, studentId: "STU-002", name: "Sarah Williams", class: "Grade 10A", amount: 150000, date: "2025-03-12", status: "paid" },
-                { id: 3, studentId: "STU-003", name: "James Wilson", class: "Grade 11B", amount: 0, date: "", status: "unpaid" },
-                { id: 4, studentId: "STU-004", name: "Emily Davis", class: "Grade 9C", amount: 150000, date: "2025-03-05", status: "paid" },
-                { id: 5, studentId: "STU-005", name: "David Chen", class: "Grade 12A", amount: 0, date: "", status: "unpaid" },
-                { id: 6, studentId: "STU-006", name: "Olivia Martinez", class: "Grade 10B", amount: 75000, date: "2025-03-01", status: "partial" },
-                { id: 7, studentId: "STU-007", name: "Robert Brown", class: "Grade 11A", amount: 150000, date: "2025-03-14", status: "paid" }
-            ];
-            persist();
+        // Sidebar Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        if (menuToggle && sidebar && overlay) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
         }
-        renderAll();
-    }
 
-    function persist() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
-    }
+        // DOM Elements
+        const paymentAmountInput = document.getElementById('paymentAmount');
+        const payBtn = document.getElementById('payBtn');
+        const successToast = document.getElementById('successToast');
+        const paymentForm = document.getElementById('paymentForm');
 
-    // compute stats
-    function updateStats() {
-        const total = students.length;
-        const paidCount = students.filter(s => s.status === 'paid').length;
-        const unpaidCount = students.filter(s => s.status === 'unpaid').length;
-        const partialCount = students.filter(s => s.status === 'partial').length;
-        const totalCollected = students.reduce((sum, s) => sum + (s.amount || 0), 0);
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="stat-card"><i class="fas fa-users"></i><div class="stat-number">${total}</div><div class="stat-label">Total Students</div></div>
-            <div class="stat-card"><i class="fas fa-check-circle"></i><div class="stat-number">${paidCount}</div><div class="stat-label">Fully Paid</div></div>
-            <div class="stat-card"><i class="fas fa-clock"></i><div class="stat-number">${unpaidCount}</div><div class="stat-label">Unpaid</div></div>
-            <div class="stat-card"><i class="fas fa-chart-line"></i><div class="stat-number">₦${totalCollected.toLocaleString()}</div><div class="stat-label">Total Collected</div></div>
-        `;
-    }
-
-    function renderTable(filterStatus = 'all', searchTerm = '') {
-        let filtered = [...students];
-        if(filterStatus === 'paid') filtered = filtered.filter(s => s.status === 'paid');
-        else if(filterStatus === 'unpaid') filtered = filtered.filter(s => s.status === 'unpaid');
+        // Paystack Config
+        const PAYSTACK_PUBLIC_KEY = '<?php echo PAYSTACK_PUBLIC_KEY; ?>';
+        const STUDENT_EMAIL = '<?php echo $student['email']; ?>';
+        const STUDENT_NAME = '<?php echo htmlspecialchars($student['full_name']); ?>';
+        const STUDENT_ID = '<?php echo htmlspecialchars($student['admission_no']); ?>';
         
-        if(searchTerm) {
-            const term = searchTerm.toLowerCase();
-            filtered = filtered.filter(s => s.name.toLowerCase().includes(term) || s.studentId.toLowerCase().includes(term));
-        }
-
-        const tbody = document.getElementById('tableBody');
-        if(filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found</td></tr>';
-            return;
-        }
-
-        let html = '';
-        filtered.forEach(student => {
-            const statusClass = student.status === 'paid' ? 'status-paid' : (student.status === 'partial' ? 'status-paid' : 'status-unpaid');
-            const statusText = student.status === 'paid' ? 'Paid' : (student.status === 'partial' ? 'Partial' : 'Unpaid');
-            const amountDisplay = student.amount ? `₦${student.amount.toLocaleString()}` : '—';
-            const dateDisplay = student.date || '—';
-            html += `
-                <tr>
-                    <td>${student.studentId}</td>
-                    <td>${student.name}</td>
-                    <td>${student.class}</td>
-                    <td>${amountDisplay}</td>
-                    <td>${dateDisplay}</td>
-                    <td><span class="${statusClass}">${statusText}</span></td>
-                    <td class="action-icons">
-                        <i class="fas fa-check-circle" title="Mark as Paid" data-id="${student.id}" data-action="markPaid"></i>
-                        <i class="fas fa-edit" title="Edit Payment" data-id="${student.id}" data-action="edit"></i>
-                    </td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
-        updateStats();
-    }
-
-    function renderAll() {
-        const filter = document.getElementById('filterStatus').value;
-        const search = document.getElementById('searchInput').value;
-        renderTable(filter, search);
-    }
-
-    // mark as paid (full amount)
-    function markAsPaid(studentId) {
-        const student = students.find(s => s.id === studentId);
-        if(student) {
-            student.status = 'paid';
-            if(!student.amount) student.amount = 150000; // default full fee
-            if(!student.date) student.date = new Date().toISOString().slice(0,10);
-            persist();
-            renderAll();
-            alert(`${student.name} marked as PAID.`);
-        }
-    }
-
-    // edit / add payment modal
-    let currentEditId = null;
-    function openModal(editId = null) {
-        const modal = document.getElementById('paymentModal');
-        document.getElementById('modalTitle').innerHTML = editId ? '<i class="fas fa-edit"></i> Edit Payment' : '<i class="fas fa-plus-circle"></i> Add New Payment';
-        if(editId) {
-            const student = students.find(s => s.id === editId);
-            if(student) {
-                document.getElementById('editStudentId').value = student.id;
-                document.getElementById('modalStudentName').value = student.name;
-                document.getElementById('modalStudentId').value = student.studentId;
-                document.getElementById('modalClass').value = student.class;
-                document.getElementById('modalAmount').value = student.amount || '';
-                document.getElementById('modalDate').value = student.date || new Date().toISOString().slice(0,10);
-                currentEditId = editId;
+        // Update pay button text when amount changes
+        function updatePayButtonText() {
+            let amount = parseFloat(paymentAmountInput.value);
+            if (isNaN(amount) || amount <= 0) {
+                amount = 0;
             }
-        } else {
-            // reset form
-            document.getElementById('editStudentId').value = '';
-            document.getElementById('modalStudentName').value = '';
-            document.getElementById('modalStudentId').value = '';
-            document.getElementById('modalClass').value = '';
-            document.getElementById('modalAmount').value = '';
-            document.getElementById('modalDate').value = new Date().toISOString().slice(0,10);
-            currentEditId = null;
+            const formatted = '₦' + amount.toLocaleString('en-NG', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            payBtn.innerHTML = `<i class="fas fa-lock"></i> Pay ${formatted} Now`;
         }
-        modal.classList.add('active');
-    }
 
-    function closeModal() {
-        document.getElementById('paymentModal').classList.remove('active');
-        currentEditId = null;
-    }
+        paymentAmountInput.addEventListener('input', updatePayButtonText);
+        updatePayButtonText(); // initial
 
-    function savePaymentFromModal() {
-        const name = document.getElementById('modalStudentName').value.trim();
-        const studentId = document.getElementById('modalStudentId').value.trim();
-        const className = document.getElementById('modalClass').value.trim();
-        let amount = parseFloat(document.getElementById('modalAmount').value);
-        const date = document.getElementById('modalDate').value;
-        if(!name || !studentId || !className || isNaN(amount) || amount < 0) {
-            alert("Please fill all fields correctly (amount must be numeric).");
-            return;
-        }
-        const status = amount >= 150000 ? 'paid' : (amount > 0 ? 'partial' : 'unpaid'); // assuming full fee 150k
-        if(currentEditId) {
-            // update existing
-            const idx = students.findIndex(s => s.id === currentEditId);
-            if(idx !== -1) {
-                students[idx] = { ...students[idx], name, studentId, class: className, amount, date, status };
-                persist();
+        // Form submit: trigger Paystack
+        paymentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const amount = parseFloat(paymentAmountInput.value);
+            if (isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid amount.');
+                return;
             }
-        } else {
-            // add new student record
-            const newId = Date.now();
-            students.push({ id: newId, studentId, name, class: className, amount, date, status });
-            persist();
-        }
-        closeModal();
-        renderAll();
-    }
 
-    // event listeners
-    function bindEvents() {
-        document.getElementById('filterStatus').addEventListener('change', () => renderAll());
-        document.getElementById('searchInput').addEventListener('input', () => renderAll());
-        document.getElementById('refreshBtn').addEventListener('click', () => renderAll());
-        document.getElementById('addPaymentBtn').addEventListener('click', () => openModal());
-        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-        document.getElementById('savePaymentBtn').addEventListener('click', savePaymentFromModal);
-        
-        document.getElementById('tableBody').addEventListener('click', (e) => {
-            const target = e.target;
-            const action = target.getAttribute('data-action');
-            const id = parseInt(target.getAttribute('data-id'));
-            if(action === 'markPaid') markAsPaid(id);
-            if(action === 'edit') openModal(id);
+            // Paystack Inline logic
+            const handler = PaystackPop.setup({
+                key: PAYSTACK_PUBLIC_KEY,
+                email: STUDENT_EMAIL,
+                amount: amount * 100, // Amount in kobo
+                currency: "NGN",
+                ref: 'TT-' + Math.floor((Math.random() * 1000000000) + 1), // Generate random reference
+                metadata: {
+                    custom_fields: [
+                        {
+                            display_name: "Student Name",
+                            variable_name: "student_name",
+                            value: STUDENT_NAME
+                        },
+                        {
+                            display_name: "Admission No",
+                            variable_name: "admission_no",
+                            value: STUDENT_ID
+                        }
+                    ]
+                },
+                callback: function(response) {
+                    // Success! 
+                    console.log(response);
+                    successToast.classList.add('show');
+                    
+                    // In a real app, you would verify the transaction on your server here
+                    // fetch('verify_payment.php?reference=' + response.reference)...
+
+                    setTimeout(() => {
+                        successToast.classList.remove('show');
+                        // Optionally redirect to a confirmation page
+                        window.location.reload();
+                    }, 4000);
+                },
+                onClose: function() {
+                    alert('Transaction cancelled.');
+                }
+            });
+
+            handler.openIframe();
         });
-        // close modal on outside click
-        window.onclick = (e) => { if(e.target === document.getElementById('paymentModal')) closeModal(); };
-    }
 
-    loadData();
-    bindEvents();
+        // Pre-fill amount with outstanding
+        paymentAmountInput.value = <?php echo $schoolFee; ?>;
+        updatePayButtonText();
+    })();
 </script>
 </body>
 </html>

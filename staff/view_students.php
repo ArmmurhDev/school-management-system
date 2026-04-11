@@ -67,6 +67,18 @@ $stmt = $pdo->prepare($notes_query);
 $stmt->execute([$student_id]);
 $notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch student results
+$results_query = "
+    SELECT r.*, s.full_name as teacher_name 
+    FROM student_results r
+    JOIN staff s ON r.staff_id = s.staff_id
+    WHERE r.student_id = ?
+    ORDER BY r.created_at DESC
+";
+$stmt = $pdo->prepare($results_query);
+$stmt->execute([$student_id]);
+$student_results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Map avatar
 $avatar = !empty($student['image']) ? '../assets/images/student/' . $student['image'] : 'https://ui-avatars.com/api/?name=' . urlencode($student['full_name']) . '&background=random';
 
@@ -624,6 +636,21 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
             color: var(--info);
         }
         
+        .grade-c {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: var(--warning);
+        }
+        
+        .grade-d {
+            background-color: rgba(255, 133, 27, 0.1);
+            color: #FF851B;
+        }
+        
+        .grade-f {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+        
         /* Attendance */
         .attendance-stats {
             display: grid;
@@ -955,12 +982,6 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                                 </div>
                                 
                                 <div class="academic-card">
-                                    <h4>Overall Attendance</h4>
-                                    <p style="font-size: 1.5rem; font-weight: 600; color: var(--success);">0%</p>
-                                    <p style="font-size: 0.9rem; color: var(--text-light);">Placeholder data</p>
-                                </div>
-                                
-                                <div class="academic-card">
                                     <h4>Current Grade</h4>
                                     <p style="font-size: 1.5rem; font-weight: 600; color: var(--accent-blue);"><?php echo htmlspecialchars($student['class_name']); ?></p>
                                     <p style="font-size: 0.9rem; color: var(--text-light);">T&T School Management</p>
@@ -979,18 +1000,20 @@ $enrollment_date = date('M d, Y', strtotime($student['created_at']));
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>Mathematics</td>
-                                            <td>Mr. John Teacher</td>
-                                            <td>92</td>
-                                            <td><span class="grade-badge grade-a">A</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Physics</td>
-                                            <td>Ms. Sarah Staff</td>
-                                            <td>85</td>
-                                            <td><span class="grade-badge grade-b">B</span></td>
-                                        </tr>
+                                        <?php if (empty($student_results)): ?>
+                                            <tr>
+                                                <td colspan="4" style="text-align: center; color: var(--text-light); padding: 20px;">No results found for this student.</td>
+                                            </tr>
+                                        <?php else: ?>
+                                            <?php foreach ($student_results as $res): ?>
+                                                <tr>
+                                                    <td><?php echo htmlspecialchars($res['subject']); ?> (<?php echo htmlspecialchars($res['test_name']); ?>)</td>
+                                                    <td><?php echo htmlspecialchars($res['teacher_name']); ?></td>
+                                                    <td><?php echo htmlspecialchars($res['score']); ?></td>
+                                                    <td><span class="grade-badge grade-<?php echo strtolower($res['grade']); ?>"><?php echo htmlspecialchars($res['grade']); ?></span></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>

@@ -1,3 +1,12 @@
+<?php
+require_once '../auth/session.php';
+require_once '../include/config.php';
+checkAccess('admin');
+
+// Fetch current school fee
+$stmt = $pdo->query("SELECT fee_amount FROM school_fees WHERE fee_id = 1");
+$schoolFee = $stmt->fetchColumn() ?: 47000.00;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,25 +16,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --primary-dark: #003366;
             --primary-deep: #00264d;
             --primary-medium: #00509E;
             --primary-soft: #1a6fb0;
             --primary-light: #4D8FCC;
+            --accent-blue: #1E88E5;
             --light-bg: #F0F8FF;
+            --sidebar-bg: #002147;
             --white: #FFFFFF;
             --text-dark: #1A2C3E;
             --text-soft: #2c3e50;
             --text-muted: #5a6e7c;
             --shadow-sm: 0 8px 20px rgba(0, 51, 102, 0.08);
             --shadow-md: 0 12px 28px rgba(0, 51, 102, 0.12);
+            --shadow: rgba(0, 51, 102, 0.1);
             --success: #2b7e3a;
             --success-light: #e0f5e3;
             --warning: #e67e22;
@@ -33,20 +39,240 @@
             --border-radius-card: 28px;
         }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(145deg, #eef5fc 0%, #e2edf7 100%);
+            background-color: #f5f7fb;
             color: var(--text-dark);
             line-height: 1.5;
-            padding: 28px 20px;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: var(--sidebar-bg);
+            color: var(--white);
+            transition: all 0.3s ease;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 25px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--primary-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .logo-icon i {
+            font-size: 22px;
+            color: var(--white);
+        }
+
+        .logo-text h2 {
+            font-size: 1.5rem;
+            color: var(--white);
+            margin-bottom: 3px;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border-left-color: var(--accent-blue);
+        }
+
+        .menu-item i {
+            width: 25px;
+            margin-right: 15px;
+            font-size: 1.1rem;
+        }
+
+        .menu-text {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 15px;
+            border: 2px solid var(--primary-light);
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details h4 {
+            color: var(--white);
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+
+        .user-details p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.8rem;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Top Header */
+        .top-header {
+            background-color: var(--white);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow);
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            cursor: pointer;
+            margin-right: 20px;
+            display: none;
+        }
+
+        .page-title h1 {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .header-action {
+            margin-left: 20px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .header-action i {
+            font-size: 1.2rem;
+            color: var(--primary-medium);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
         }
 
         .fee-container {
             max-width: 1440px;
             margin: 0 auto;
             background: var(--white);
-            border-radius: 42px;
+            border-radius: 30px;
             box-shadow: var(--shadow-md);
             overflow: hidden;
         }
@@ -96,6 +322,29 @@
             border-radius: 60px;
             padding: 8px 24px;
             font-weight: 500;
+        }
+
+        .header-btn {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .header-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         /* stats row */
@@ -317,6 +566,40 @@
     </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Sidebar -->
+        <?php include '../include/admin_sidebar.php'; ?>
+        
+        <!-- Overlay for mobile -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h1>Fee Management</h1>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <div class="header-action">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    
+                    <div class="header-action">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    
+                    <div class="header-action">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Admin" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                    </div>
+                </div>
+            </div>
 
 <div class="fee-container">
     <div class="fee-header">
@@ -325,9 +608,9 @@
                 <h1><i class="fas fa-coins"></i> Fee Management</h1>
                 <p><i class="fas fa-user-shield"></i> Admin · Finance Dashboard · Spring 2025 Semester</p>
             </div>
-            <div class="semester-badge">
-                <i class="fas fa-calendar-alt"></i> Academic Year 2024-2025
-            </div>
+            <a href="school_fees_price.php" class="header-btn" style="text-decoration: none;">
+                <i class="fas fa-file-invoice-dollar"></i> School Fees
+            </a>
         </div>
     </div>
 
@@ -410,24 +693,42 @@
 <div id="toastMsg" class="toast"></div>
 
 <script>
+    // Mobile Menu Toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+
+    if (menuToggle && sidebar && overlay) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    }
+
     // ---------- MOCK DATA ----------
     // Student fee records with payment history
+    const schoolFee = <?php echo $schoolFee; ?>;
     const studentsData = [
-        { id: "STU-1001", name: "Olivia Chen", totalFee: 2500, paid: 2500, lastTransaction: "2025-03-15", transactionId: "TXN-001" },
-        { id: "STU-1002", name: "Liam Rodriguez", totalFee: 2500, paid: 1500, lastTransaction: "2025-02-28", transactionId: "TXN-002" },
-        { id: "STU-1003", name: "Emma Thompson", totalFee: 2500, paid: 0, lastTransaction: null, transactionId: null },
-        { id: "STU-1004", name: "Noah Williams", totalFee: 2500, paid: 2500, lastTransaction: "2025-03-10", transactionId: "TXN-003" },
-        { id: "STU-1005", name: "Ava Johnson", totalFee: 2500, paid: 2000, lastTransaction: "2025-03-05", transactionId: "TXN-004" },
-        { id: "STU-1006", name: "Mason Brown", totalFee: 2500, paid: 2500, lastTransaction: "2025-02-20", transactionId: "TXN-005" },
-        { id: "STU-1007", name: "Sophia Davis", totalFee: 2500, paid: 500, lastTransaction: "2025-03-01", transactionId: "TXN-006" },
-        { id: "STU-1008", name: "Ethan Miller", totalFee: 2500, paid: 2500, lastTransaction: "2025-03-12", transactionId: "TXN-007" },
-        { id: "STU-1009", name: "Isabella Wilson", totalFee: 2500, paid: 2500, lastTransaction: "2025-03-08", transactionId: "TXN-008" },
-        { id: "STU-1010", name: "James Martinez", totalFee: 2500, paid: 0, lastTransaction: null, transactionId: null }
+        { id: "STU-1001", name: "Olivia Chen", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-15", transactionId: "TXN-001" },
+        { id: "STU-1002", name: "Liam Rodriguez", totalFee: schoolFee, paid: 15000, lastTransaction: "2025-02-28", transactionId: "TXN-002" },
+        { id: "STU-1003", name: "Emma Thompson", totalFee: schoolFee, paid: 0, lastTransaction: null, transactionId: null },
+        { id: "STU-1004", name: "Noah Williams", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-10", transactionId: "TXN-003" },
+        { id: "STU-1005", name: "Ava Johnson", totalFee: schoolFee, paid: 20000, lastTransaction: "2025-03-05", transactionId: "TXN-004" },
+        { id: "STU-1006", name: "Mason Brown", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-02-20", transactionId: "TXN-005" },
+        { id: "STU-1007", name: "Sophia Davis", totalFee: schoolFee, paid: 5000, lastTransaction: "2025-03-01", transactionId: "TXN-006" },
+        { id: "STU-1008", name: "Ethan Miller", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-12", transactionId: "TXN-007" },
+        { id: "STU-1009", name: "Isabella Wilson", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-08", transactionId: "TXN-008" },
+        { id: "STU-1010", name: "James Martinez", totalFee: schoolFee, paid: 0, lastTransaction: null, transactionId: null }
     ];
 
     // Function to format currency
     function formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+        return '₦' + parseFloat(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     // Format date
@@ -511,6 +812,7 @@
         const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');
         const resetBtn = document.getElementById('resetFilters');
+        const updateFeeBtn = document.getElementById('updateFeeBtn');
         
         searchInput.addEventListener('input', (e) => {
             currentFilter.search = e.target.value;
@@ -567,6 +869,8 @@
     }
     
     init();
-</script>
-</body>
-</html>
+    </script>
+        </div> <!-- end main-content -->
+    </div> <!-- end container -->
+    </body>
+    </html>

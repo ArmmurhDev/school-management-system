@@ -39,7 +39,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Attendance</span>
         </a-->
         
-        <a href="#" class="menu-item">
+        <a href="admin_fees.php" class="menu-item">
             <i class="fas fa-file-invoice-dollar"></i>
             <span class="menu-text">Fees</span>
         </a>

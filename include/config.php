@@ -14,6 +14,10 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'school_management');
 
+// Paystack API Keys
+define('PAYSTACK_PUBLIC_KEY', 'pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+define('PAYSTACK_SECRET_KEY', 'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+
 // Database Connection
 try {
     // Create a new PDO instance
@@ -149,6 +153,20 @@ try {
 
         $stmt = $pdo->query("SELECT class_name FROM classes ORDER BY class_name ASC");
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    // Auto-create school_fees table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS `school_fees` (
+        `fee_id` int(11) NOT NULL AUTO_INCREMENT,
+        `fee_amount` decimal(10,2) NOT NULL,
+        `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+        PRIMARY KEY (`fee_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Insert default fee if table is empty
+    $stmt = $pdo->query("SELECT COUNT(*) FROM school_fees");
+    if ($stmt->fetchColumn() == 0) {
+        $pdo->exec("INSERT INTO school_fees (fee_id, fee_amount) VALUES (1, 47000.00)");
     }
 
 } catch (PDOException $e) {

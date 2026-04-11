@@ -55,16 +55,6 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'staff') {
             <span class="menu-text">Enter Results</span>
         </a>
         
-        <a href="view_result.php" class="menu-item <?php echo ($currentPage == 'view_result.php') ? 'active' : ''; ?>">
-            <i class="fas fa-chart-line"></i>
-            <span class="menu-text">View Results</span>
-        </a>
-        
-        <a href="time_table.php" class="menu-item <?php echo ($currentPage == 'time_table.php') ? 'active' : ''; ?>">
-            <i class="fas fa-calendar-alt"></i>
-            <span class="menu-text">Timetable</span>
-        </a>
-        
         <a href="#" class="menu-item">
             <i class="fas fa-envelope"></i>
             <span class="menu-text">Messages</span>

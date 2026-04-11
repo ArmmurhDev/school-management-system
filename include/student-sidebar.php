@@ -44,6 +44,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <i class="fas fa-envelope"></i>
             <span class="menu-text">Messages</span>
         </a>
+
+        <a href="student_payment.php" class="menu-item <?php echo ($current_page == 'student_payment.php') ? 'active' : ''; ?>">
+            <i class="fas fa-money-bill"></i>
+            <span class="menu-text">School Fees</span>
+        </a>
         
         <a href="../auth/logout.php" class="menu-item">
             <i class="fas fa-sign-out-alt"></i>
