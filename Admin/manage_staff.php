@@ -3,6 +3,19 @@ require_once '../auth/session.php';
 require_once '../include/config.php';
 checkAccess('admin');
 
+// Ensure admin table has necessary columns
+$admin_migrations = [
+    'phone' => "ALTER TABLE admin ADD COLUMN phone VARCHAR(20) DEFAULT NULL AFTER email",
+    'image' => "ALTER TABLE admin ADD COLUMN image VARCHAR(255) DEFAULT NULL AFTER password"
+];
+foreach ($admin_migrations as $column => $sql) {
+    try {
+        $pdo->query("SELECT $column FROM admin LIMIT 1");
+    } catch (Exception $e) {
+        $pdo->exec($sql);
+    }
+}
+
 // Handle Staff Deletion
 if (isset($_GET['delete_id'])) {
     $delete_id = $_GET['delete_id'];
@@ -21,6 +34,27 @@ if (isset($_GET['delete_id'])) {
         exit;
     } catch (PDOException $e) {
         $error = "Error deleting staff: " . $e->getMessage();
+    }
+}
+
+// Handle Admin Deletion
+if (isset($_GET['delete_admin_id'])) {
+    $delete_id = $_GET['delete_admin_id'];
+    try {
+        $stmt = $pdo->prepare("SELECT image FROM admin WHERE admin_id = ?");
+        $stmt->execute([$delete_id]);
+        $admin_member = $stmt->fetch();
+        
+        if ($admin_member && $admin_member['image'] && file_exists("../assets/images/admin/" . $admin_member['image'])) {
+            unlink("../assets/images/admin/" . $admin_member['image']);
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM admin WHERE admin_id = ?");
+        $stmt->execute([$delete_id]);
+        header("Location: manage_staff.php?msg=admin_deleted");
+        exit;
+    } catch (PDOException $e) {
+        $error = "Error deleting admin: " . $e->getMessage();
     }
 }
 
@@ -44,22 +78,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_staff'])) {
     }
 }
 
-// Fetch Staff, Positions, and Subjects
+// Handle Admin Update
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_admin'])) {
+    $admin_id = $_POST['admin_id'];
+    $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
+    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
+
+    try {
+        $stmt = $pdo->prepare("UPDATE admin SET full_name = ?, email = ?, phone = ? WHERE admin_id = ?");
+        $stmt->execute([$full_name, $email, $phone, $admin_id]);
+        header("Location: manage_staff.php?msg=admin_updated");
+        exit;
+    } catch (PDOException $e) {
+        $error = "Error updating admin: " . $e->getMessage();
+    }
+}
+
+// Fetch Staff, Admin, Positions, and Subjects
 $staff_list = [];
+$admin_list = [];
 $teaching_count = 0;
 $admin_count = 0;
 
 try {
     $positions = getStaffPositions($pdo);
     $subjects = getSubjects($pdo);
+    
     $stmt = $pdo->query("SELECT * FROM staff ORDER BY created_at DESC");
     $staff_list = $stmt->fetchAll();
+    
+    $stmt = $pdo->query("SELECT * FROM admin ORDER BY created_at DESC");
+    $admin_list = $stmt->fetchAll();
     
     foreach ($staff_list as $s) {
         $pos = strtolower($s['position']);
         if (strpos($pos, 'teacher') !== false || strpos($pos, 'staff') !== false) $teaching_count++;
         elseif (strpos($pos, 'admin') !== false || strpos($pos, 'registra') !== false || strpos($pos, 'director') !== false) $admin_count++;
     }
+    $admin_count += count($admin_list);
 } catch (PDOException $e) {
     $error = "Error fetching data: " . $e->getMessage();
 }
@@ -98,10 +155,22 @@ try {
         /* Sidebar Styles */
         .sidebar { width: 250px; background-color: var(--sidebar-bg); color: var(--white); transition: all 0.3s ease; position: fixed; height: 100vh; z-index: 100; overflow-y: auto; box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1); }
         .sidebar-header { padding: 25px 20px; display: flex; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .logo-icon { width: 45px; height: 45px; background: linear-gradient(135deg, var(--accent-blue), var(--primary-light)); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
+        .logo-icon i { font-size: 22px; color: var(--white); }
+        .logo-text h2 { font-size: 1.5rem; color: var(--white); margin-bottom: 3px; }
+        .logo-text p { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); }
         .sidebar-menu { padding: 20px 0; }
         .menu-item { padding: 15px 20px; display: flex; align-items: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: rgba(255, 255, 255, 0.8); border-left: 3px solid transparent; }
         .menu-item:hover, .menu-item.active { background-color: rgba(255, 255, 255, 0.1); color: var(--white); border-left-color: var(--accent-blue); }
         .menu-item i { width: 25px; margin-right: 15px; font-size: 1.1rem; }
+        .menu-text { font-size: 0.95rem; font-weight: 500; }
+        .menu-item.active .menu-text { font-weight: 600; }
+        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); position: absolute; bottom: 0; width: 100%; }
+        .user-info { display: flex; align-items: center; }
+        .user-avatar { width: 45px; height: 45px; border-radius: 50%; overflow: hidden; margin-right: 15px; border: 2px solid var(--primary-light); }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-details h4 { color: var(--white); font-size: 0.95rem; margin-bottom: 3px; }
+        .user-details p { color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; }
 
         /* Main Content Area */
         .main-content { flex: 1; margin-left: 250px; transition: margin-left 0.3s ease; min-height: 100vh; }
@@ -227,13 +296,23 @@ try {
                         </table>
                     </div>
                 </div>
+
+                <div class="staff-table-container">
+                    <div class="table-header"><h3>Administrative Records</h3><div><span id="adminCount"><?php echo count($admin_list); ?></span> admins found</div></div>
+                    <div class="table-responsive">
+                        <table class="staff-table">
+                            <thead><tr><th>Administrator</th><th>Username</th><th>Contact</th><th>Joined Date</th><th>Actions</th></tr></thead>
+                            <tbody id="adminTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
                 
                 <div class="dashboard-footer"><p>&copy; 2023 T&T School Management System. All rights reserved.</p></div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Staff Edit Modal -->
     <div class="modal" id="staffModal">
         <div class="modal-content">
             <div class="modal-header"><h3>Edit Staff Member</h3><button class="close-modal" onclick="closeModal('staffModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
@@ -276,10 +355,33 @@ try {
         </div>
     </div>
 
+    <!-- Admin Edit Modal -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Edit Administrator</h3><button class="close-modal" onclick="closeModal('adminModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
+            <div class="modal-body">
+                <form action="manage_staff.php" method="POST">
+                    <input type="hidden" name="admin_id" id="edit_admin_id">
+                    <div class="form-row">
+                        <div class="form-group"><label>Full Name</label><input type="text" name="full_name" id="edit_admin_full_name" required></div>
+                        <div class="form-group"><label>Email</label><input type="email" name="email" id="edit_admin_email" required></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Phone</label><input type="text" name="phone" id="edit_admin_phone"></div>
+                    </div>
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('adminModal')">Cancel</button>
+                        <button type="submit" name="update_admin" class="btn btn-primary">Update Admin Information</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- View Modal -->
     <div class="modal" id="viewModal">
         <div class="modal-content">
-            <div class="modal-header"><h3>Staff Member Profile</h3><button class="close-modal" onclick="closeModal('viewModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
+            <div class="modal-header"><h3>Profile View</h3><button class="close-modal" onclick="closeModal('viewModal')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button></div>
             <div class="modal-body" id="viewDetails"></div>
             <div style="padding: 20px 30px; border-top: 1px solid #eee; text-align: right;">
                 <button class="btn btn-secondary" onclick="closeModal('viewModal')">Close Profile</button>
@@ -289,7 +391,9 @@ try {
 
     <script>
         const staffData = <?php echo json_encode($staff_list); ?>;
+        const adminData = <?php echo json_encode($admin_list); ?>;
         const staffTableBody = document.getElementById('staffTableBody');
+        const adminTableBody = document.getElementById('adminTableBody');
         
         function renderStaff(filtered = staffData) {
             staffTableBody.innerHTML = '';
@@ -308,7 +412,7 @@ try {
                     <div><h4>${s.full_name}</h4><p>ID: STF-${s.staff_id}</p></div></div></td>
                     <td>${s.position}</td>
                     <td>${s.subject || 'N/A'}</td>
-                    <td><div>${s.email}</div><small>${s.phone}</small></td>
+                    <td><div>${s.email}</div><small>${s.phone || 'No phone'}</small></td>
                     <td><div class="action-buttons">
                         <button class="action-btn view" title="View Profile" onclick='viewStaff(${JSON.stringify(s)})'><i class="fas fa-eye"></i></button>
                         <button class="action-btn edit" title="Edit Info" onclick='editStaff(${JSON.stringify(s)})'><i class="fas fa-edit"></i></button>
@@ -318,15 +422,50 @@ try {
             });
         }
 
+        function renderAdmin(filtered = adminData) {
+            adminTableBody.innerHTML = '';
+            document.getElementById('adminCount').textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                adminTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px;">No matching records found.</td></tr>';
+                return;
+            }
+
+            filtered.forEach(a => {
+                const img = a.image ? '../assets/images/admin/' + a.image : '../assets/images/admin/default.png';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><div class="staff-info"><div class="staff-avatar"><img src="${img}"></div>
+                    <div><h4>${a.full_name}</h4><p>ID: ADM-${a.admin_id}</p></div></div></td>
+                    <td>${a.username}</td>
+                    <td><div>${a.email}</div><small>${a.phone || 'No phone'}</small></td>
+                    <td>${new Date(a.created_at).toLocaleDateString()}</td>
+                    <td><div class="action-buttons">
+                        <button class="action-btn view" title="View Profile" onclick='viewAdmin(${JSON.stringify(a)})'><i class="fas fa-eye"></i></button>
+                        <button class="action-btn edit" title="Edit Info" onclick='editAdmin(${JSON.stringify(a)})'><i class="fas fa-edit"></i></button>
+                        <button class="action-btn delete" title="Delete Admin" onclick="deleteAdmin(${a.admin_id})"><i class="fas fa-trash"></i></button>
+                    </div></td>`;
+                adminTableBody.appendChild(row);
+            });
+        }
+
         function editStaff(s) {
             document.getElementById('edit_staff_id').value = s.staff_id;
             document.getElementById('edit_full_name').value = s.full_name;
             document.getElementById('edit_email').value = s.email;
-            document.getElementById('edit_phone').value = s.phone;
-            document.getElementById('edit_qualification').value = s.qualification;
+            document.getElementById('edit_phone').value = s.phone || '';
+            document.getElementById('edit_qualification').value = s.qualification || '';
             document.getElementById('edit_position').value = s.position;
-            document.getElementById('edit_subject').value = s.subject;
+            document.getElementById('edit_subject').value = s.subject || '';
             document.getElementById('staffModal').classList.add('active');
+        }
+
+        function editAdmin(a) {
+            document.getElementById('edit_admin_id').value = a.admin_id;
+            document.getElementById('edit_admin_full_name').value = a.full_name;
+            document.getElementById('edit_admin_email').value = a.email;
+            document.getElementById('edit_admin_phone').value = a.phone || '';
+            document.getElementById('adminModal').classList.add('active');
         }
 
         function viewStaff(s) {
@@ -338,7 +477,7 @@ try {
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; background:#f9f9f9; padding:25px; border-radius:12px;">
                     <div><strong style="font-size:0.8rem; color:#666;">EMAIL ADDRESS</strong><br>${s.email}</div>
-                    <div><strong style="font-size:0.8rem; color:#666;">PHONE NUMBER</strong><br>${s.phone}</div>
+                    <div><strong style="font-size:0.8rem; color:#666;">PHONE NUMBER</strong><br>${s.phone || 'N/A'}</div>
                     <div><strong style="font-size:0.8rem; color:#666;">SUBJECT</strong><br>${s.subject || 'N/A'}</div>
                     <div><strong style="font-size:0.8rem; color:#666;">QUALIFICATION</strong><br>${s.qualification || 'N/A'}</div>
                     <div style="grid-column: span 2;"><strong style="font-size:0.8rem; color:#666;">JOINED DATE</strong><br>${new Date(s.created_at).toLocaleDateString()}</div>
@@ -346,24 +485,49 @@ try {
             document.getElementById('viewModal').classList.add('active');
         }
 
+        function viewAdmin(a) {
+            const img = a.image ? '../assets/images/admin/' + a.image : '../assets/images/admin/default.png';
+            document.getElementById('viewDetails').innerHTML = `
+                <div style="text-align:center; margin-bottom:20px;">
+                    <img src="${img}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid var(--primary-light);">
+                    <h2 style="margin-top:10px;">${a.full_name}</h2><p style="color:var(--primary-medium); font-weight:600;">Administrator</p>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; background:#f9f9f9; padding:25px; border-radius:12px;">
+                    <div><strong style="font-size:0.8rem; color:#666;">USERNAME</strong><br>${a.username}</div>
+                    <div><strong style="font-size:0.8rem; color:#666;">EMAIL ADDRESS</strong><br>${a.email}</div>
+                    <div><strong style="font-size:0.8rem; color:#666;">PHONE NUMBER</strong><br>${a.phone || 'N/A'}</div>
+                    <div><strong style="font-size:0.8rem; color:#666;">JOINED DATE</strong><br>${new Date(a.created_at).toLocaleDateString()}</div>
+                </div>`;
+            document.getElementById('viewModal').classList.add('active');
+        }
+
         function deleteStaff(id) { if(confirm('Are you sure you want to delete this staff member? This action is permanent.')) window.location.href = 'manage_staff.php?delete_id=' + id; }
+        function deleteAdmin(id) { if(confirm('Are you sure you want to delete this administrator? This action is permanent.')) window.location.href = 'manage_staff.php?delete_admin_id=' + id; }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
         // Filter functionality
         document.getElementById('staffSearch').addEventListener('input', e => {
             const term = e.target.value.toLowerCase();
             renderStaff(staffData.filter(s => s.full_name.toLowerCase().includes(term) || s.email.toLowerCase().includes(term)));
+            renderAdmin(adminData.filter(a => a.full_name.toLowerCase().includes(term) || a.email.toLowerCase().includes(term) || a.username.toLowerCase().includes(term)));
         });
 
         document.getElementById('staffPositionFilter').addEventListener('change', e => {
             const val = e.target.value;
             renderStaff(val ? staffData.filter(s => s.position === val) : staffData);
+            // Admin doesn't have position filter but we can hide them if a specific non-admin position is selected
+            if (val && !['Administrator', 'Academic Director', 'Registra'].includes(val)) {
+                renderAdmin([]);
+            } else {
+                renderAdmin();
+            }
         });
 
         document.getElementById('clearFiltersBtn').addEventListener('click', () => {
             document.getElementById('staffSearch').value = '';
             document.getElementById('staffPositionFilter').value = '';
             renderStaff();
+            renderAdmin();
         });
 
         document.getElementById('menuToggle').addEventListener('click', () => {
@@ -376,7 +540,10 @@ try {
             document.getElementById('overlay').classList.remove('active');
         });
 
-        document.addEventListener('DOMContentLoaded', () => renderStaff());
+        document.addEventListener('DOMContentLoaded', () => {
+            renderStaff();
+            renderAdmin();
+        });
     </script>
 </body>
 </html>

@@ -30,15 +30,15 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="menu-text">Course Registration</span>
         </a--->
         
-        <a href="view_results.php" class="menu-item <?php echo ($current_page == 'view_results.php') ? 'active' : ''; ?>">
+        <a href="report_card.php" class="menu-item <?php echo ($current_page == 'report_card.php') ? 'active' : ''; ?>">
             <i class="fas fa-chart-line"></i>
             <span class="menu-text">Grades</span>
         </a>
         
-        <a href="student-assignments.php" class="menu-item <?php echo ($current_page == 'student-assignments.php') ? 'active' : ''; ?>">
+        <!---a href="student-assignments.php" class="menu-item <?php echo ($current_page == 'student-assignments.php') ? 'active' : ''; ?>">
             <i class="fas fa-tasks"></i>
             <span class="menu-text">Assignments</span>
-        </a>
+        </a--->
         
         <a href="student-messages.php" class="menu-item <?php echo ($current_page == 'student-messages.php') ? 'active' : ''; ?>">
             <i class="fas fa-envelope"></i>

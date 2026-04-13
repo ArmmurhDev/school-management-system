@@ -12,7 +12,8 @@ try {
       `student_id` int(11) NOT NULL,
       `staff_id` int(11) NOT NULL,
       `subject` varchar(100) NOT NULL,
-      `test_name` varchar(100) NOT NULL,
+      `ca_score` decimal(5,2) DEFAULT 0.00,
+      `exam_score` decimal(5,2) DEFAULT 0.00,
       `score` decimal(5,2) NOT NULL,
       `grade` varchar(2) NOT NULL,
       `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -20,6 +21,17 @@ try {
       KEY `student_id` (`student_id`),
       KEY `staff_id` (`staff_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+    // Migration: Add ca_score and exam_score if they don't exist
+    $columns = $pdo->query("SHOW COLUMNS FROM student_results")->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('ca_score', $columns)) {
+        $pdo->exec("ALTER TABLE student_results ADD COLUMN ca_score decimal(5,2) DEFAULT 0.00 AFTER subject");
+    }
+    if (!in_array('exam_score', $columns)) {
+        $pdo->exec("ALTER TABLE student_results ADD COLUMN exam_score decimal(5,2) DEFAULT 0.00 AFTER ca_score");
+    }
+    // Remove test_name if it exists (optional, keeping for safety or removing if requested)
+    // For this task, we repurpose the UI but we should probably keep the DB clean.
 } catch (PDOException $e) {
     // Ignore error
 }
@@ -37,27 +49,53 @@ $staff_subject = $staff['subject'] ?? '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_result') {
     $student_id = intval($_POST['student_id']);
     $subject = $staff_subject;
-    $test_name = trim($_POST['test_name']);
-    $score = floatval($_POST['score']);
+    $ca_score = floatval($_POST['ca_score']);
+    $exam_score = floatval($_POST['exam_score']);
+    $score = $ca_score + $exam_score;
     $result_date = $_POST['result_date'];
 
     // Grading Logic: > 80 is A, else > 70 is B, else > 60 is C, else > 35 is D, < 34 is F
     $grade = 'F';
-    if ($score > 80) $grade = 'A';
-    elseif ($score > 70) $grade = 'B';
-    elseif ($score > 60) $grade = 'C';
-    elseif ($score > 35) $grade = 'D';
+    if ($score >= 80) $grade = 'A';
+    elseif ($score >= 70) $grade = 'B';
+    elseif ($score >= 60) $grade = 'C';
+    elseif ($score >= 40) $grade = 'D'; // Adjusted to 40 for standard D
     else $grade = 'F';
 
-    if ($student_id > 0 && !empty($test_name)) {
+    if ($student_id > 0) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO student_results (student_id, staff_id, subject, test_name, score, grade, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$student_id, $staff_id, $subject, $test_name, $score, $grade, $result_date]);
+            $stmt = $pdo->prepare("INSERT INTO student_results (student_id, staff_id, subject, ca_score, exam_score, score, grade, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$student_id, $staff_id, $subject, $ca_score, $exam_score, $score, $grade, $result_date]);
             header("Location: enter_results.php?success=1");
             exit;
         } catch (PDOException $e) {
             $error_message = "Error adding result: " . $e->getMessage();
         }
+    }
+}
+
+// Handle Edit Result Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_result') {
+    $result_id = intval($_POST['result_id']);
+    $ca_score = floatval($_POST['ca_score']);
+    $exam_score = floatval($_POST['exam_score']);
+    $score = $ca_score + $exam_score;
+    
+    // Grading Logic
+    $grade = 'F';
+    if ($score >= 80) $grade = 'A';
+    elseif ($score >= 70) $grade = 'B';
+    elseif ($score >= 60) $grade = 'C';
+    elseif ($score >= 40) $grade = 'D';
+    else $grade = 'F';
+
+    try {
+        $stmt = $pdo->prepare("UPDATE student_results SET ca_score = ?, exam_score = ?, score = ?, grade = ? WHERE result_id = ? AND staff_id = ?");
+        $stmt->execute([$ca_score, $exam_score, $score, $grade, $result_id, $staff_id]);
+        header("Location: enter_results.php?updated=1");
+        exit;
+    } catch (PDOException $e) {
+        $error_message = "Error updating result: " . $e->getMessage();
     }
 }
 
@@ -96,6 +134,120 @@ $stmt = $pdo->prepare($results_query);
 $stmt->execute([$staff_id]);
 $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// --- AJAX Support ---
+if (isset($_GET['ajax'])) {
+    ?>
+    <?php if (isset($_GET['success'])): ?>
+        <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb;">
+            <i class="fas fa-check-circle"></i> Result added successfully!
+        </div>
+    <?php endif; ?>
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-upload"></i> Upload New Test Result</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="addResultForm" action="enter_results.php">
+                <input type="hidden" name="action" value="add_result">
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Student Name *</label>
+                        <select name="student_id" required>
+                            <option value="">Select Student</option>
+                            <?php foreach ($enrolled_students as $std): ?>
+                                <option value="<?php echo $std['student_id']; ?>"><?php echo htmlspecialchars($std['full_name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Subject *</label>
+                        <input type="text" name="subject" value="<?php echo htmlspecialchars($staff_subject); ?>" readonly style="background-color: #f0f0f0;">
+                    </div>
+                    <div class="input-group">
+                        <label>CA Score (40) *</label>
+                        <input type="number" name="ca_score" id="ca_score" min="0" max="40" step="0.01" placeholder="0-40" required oninput="calculateTotal()">
+                    </div>
+                    <div class="input-group">
+                        <label>Exam Score (60) *</label>
+                        <input type="number" name="exam_score" id="exam_score" min="0" max="60" step="0.01" placeholder="0-60" required oninput="calculateTotal()">
+                    </div>
+                    <div class="input-group">
+                        <label>Total Score (100) *</label>
+                        <input type="number" name="score" id="total_score" min="0" max="100" step="0.01" placeholder="Total" readonly style="background-color: #f0f0f0;">
+                    </div>
+                    <div class="input-group">
+                        <label>Date</label>
+                        <input type="date" name="result_date" value="<?php echo date('Y-m-d'); ?>" required>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 15px;">
+                    <button type="reset" class="btn btn-outline">Clear</button>
+                    <button type="submit" class="btn btn-primary">Save Result</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-table-list"></i> Uploaded Results</h2>
+            <div><span><?php echo count($results); ?></span> records</div>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>CA</th>
+                            <th>Exam</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($results)): ?>
+                            <tr>
+                                <td colspan="8" style="text-align:center; padding: 30px;">No results found</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($results as $res): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($res['student_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($res['subject']); ?></td>
+                                    <td><?php echo number_format($res['ca_score'], 1); ?></td>
+                                    <td><?php echo number_format($res['exam_score'], 1); ?></td>
+                                    <td><strong><?php echo number_format($res['score'], 1); ?>%</strong></td>
+                                    <td><span class="grade-badge"><?php echo $res['grade']; ?></span></td>
+                                    <td><?php echo date('M d, Y', strtotime($res['created_at'])); ?></td>
+                                    <td class="action-icons">
+                                        <i class="fas fa-edit edit-icon" title="Edit" onclick='openEditModal(<?php echo json_encode([
+                                            "result_id" => $res["result_id"],
+                                            "student_name" => $res["student_name"],
+                                            "subject" => $res["subject"],
+                                            "ca_score" => $res["ca_score"],
+                                            "exam_score" => $res["exam_score"]
+                                        ]); ?>)'></i>
+                                        <a href="?delete=<?php echo $res['result_id']; ?>" onclick="return confirm('Delete this result?')" class="delete-icon" style="text-decoration: none;">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php
+    exit;
+}
+// --- End AJAX Support ---
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -478,6 +630,64 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         .delete-icon { color: var(--danger); background: rgba(220, 53, 69, 0.1); }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.3rem;
+            color: var(--primary-dark);
+            margin: 0;
+        }
+
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .edit-icon { color: var(--accent-blue); background: rgba(30, 136, 229, 0.1); }
+
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -526,6 +736,12 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         <?php endif; ?>
 
+        <?php if (isset($_GET['updated'])): ?>
+            <div style="background-color: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bee5eb;">
+                <i class="fas fa-info-circle"></i> Result updated successfully!
+            </div>
+        <?php endif; ?>
+
         <?php if (isset($_GET['deleted'])): ?>
             <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
                 <i class="fas fa-trash"></i> Result deleted successfully!
@@ -554,12 +770,16 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <input type="text" name="subject" value="<?php echo htmlspecialchars($staff_subject); ?>" readonly style="background-color: #f0f0f0;">
                         </div>
                         <div class="input-group">
-                            <label>Test Name *</label>
-                            <input type="text" name="test_name" placeholder="e.g. Midterm" required>
+                            <label>CA Score (40) *</label>
+                            <input type="number" name="ca_score" id="ca_score" min="0" max="40" step="0.01" placeholder="0-40" required oninput="calculateTotal()">
                         </div>
                         <div class="input-group">
-                            <label>Score (%) *</label>
-                            <input type="number" name="score" min="0" max="100" step="0.01" placeholder="0-100" required>
+                            <label>Exam Score (60) *</label>
+                            <input type="number" name="exam_score" id="exam_score" min="0" max="60" step="0.01" placeholder="0-60" required oninput="calculateTotal()">
+                        </div>
+                        <div class="input-group">
+                            <label>Total Score (100) *</label>
+                            <input type="number" name="score" id="total_score" min="0" max="100" step="0.01" placeholder="Total" readonly style="background-color: #f0f0f0;">
                         </div>
                         <div class="input-group">
                             <label>Date</label>
@@ -586,8 +806,9 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <tr>
                                 <th>Student</th>
                                 <th>Subject</th>
-                                <th>Test</th>
-                                <th>Score</th>
+                                <th>CA</th>
+                                <th>Exam</th>
+                                <th>Total</th>
                                 <th>Grade</th>
                                 <th>Date</th>
                                 <th>Actions</th>
@@ -596,18 +817,26 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tbody>
                             <?php if (empty($results)): ?>
                                 <tr>
-                                    <td colspan="7" style="text-align:center; padding: 30px;">No results found</td>
+                                    <td colspan="8" style="text-align:center; padding: 30px;">No results found</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($results as $res): ?>
                                     <tr>
                                         <td><?php echo htmlspecialchars($res['student_name']); ?></td>
                                         <td><?php echo htmlspecialchars($res['subject']); ?></td>
-                                        <td><?php echo htmlspecialchars($res['test_name']); ?></td>
+                                        <td><?php echo number_format($res['ca_score'], 1); ?></td>
+                                        <td><?php echo number_format($res['exam_score'], 1); ?></td>
                                         <td><strong><?php echo number_format($res['score'], 1); ?>%</strong></td>
                                         <td><span class="grade-badge"><?php echo $res['grade']; ?></span></td>
                                         <td><?php echo date('M d, Y', strtotime($res['created_at'])); ?></td>
                                         <td class="action-icons">
+                                            <i class="fas fa-edit edit-icon" title="Edit" onclick='openEditModal(<?php echo json_encode([
+                                                "result_id" => $res["result_id"],
+                                                "student_name" => $res["student_name"],
+                                                "subject" => $res["subject"],
+                                                "ca_score" => $res["ca_score"],
+                                                "exam_score" => $res["exam_score"]
+                                            ]); ?>)'></i>
                                             <a href="?delete=<?php echo $res['result_id']; ?>" onclick="return confirm('Delete this result?')" class="delete-icon" style="text-decoration: none;">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
@@ -623,7 +852,84 @@ $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
+<!-- Edit Result Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Edit Student Result</h2>
+            <span class="close-modal" id="closeModal">&times;</span>
+        </div>
+        <form method="POST">
+            <input type="hidden" name="action" value="edit_result">
+            <input type="hidden" name="result_id" id="edit_result_id">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Student Name</label>
+                    <input type="text" id="edit_student_name" readonly style="background-color: #f0f0f0;">
+                </div>
+                <div class="input-group">
+                    <label>Subject</label>
+                    <input type="text" id="edit_subject" readonly style="background-color: #f0f0f0;">
+                </div>
+                <div class="input-group">
+                    <label>CA Score (40)</label>
+                    <input type="number" name="ca_score" id="edit_ca_score" min="0" max="40" step="0.01" required oninput="calculateEditTotal()">
+                </div>
+                <div class="input-group">
+                    <label>Exam Score (60)</label>
+                    <input type="number" name="exam_score" id="edit_exam_score" min="0" max="60" step="0.01" required oninput="calculateEditTotal()">
+                </div>
+                <div class="input-group">
+                    <label>Total Score (100)</label>
+                    <input type="number" id="edit_total_score" readonly style="background-color: #f0f0f0;">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px;">
+                <button type="button" class="btn btn-outline" id="cancelModal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Result</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function calculateTotal() {
+        const ca = parseFloat(document.getElementById('ca_score').value) || 0;
+        const exam = parseFloat(document.getElementById('exam_score').value) || 0;
+        document.getElementById('total_score').value = (ca + exam).toFixed(2);
+    }
+
+    function openEditModal(data) {
+        document.getElementById('edit_result_id').value = data.result_id;
+        document.getElementById('edit_student_name').value = data.student_name;
+        document.getElementById('edit_subject').value = data.subject;
+        document.getElementById('edit_ca_score').value = data.ca_score;
+        document.getElementById('edit_exam_score').value = data.exam_score;
+        calculateEditTotal();
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function calculateEditTotal() {
+        const ca = parseFloat(document.getElementById('edit_ca_score').value) || 0;
+        const exam = parseFloat(document.getElementById('edit_exam_score').value) || 0;
+        document.getElementById('edit_total_score').value = (ca + exam).toFixed(2);
+    }
+
+    document.getElementById('closeModal').onclick = function() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    document.getElementById('cancelModal').onclick = function() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('editModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
     // DOM Elements
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');

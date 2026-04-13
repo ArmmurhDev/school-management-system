@@ -3,55 +3,61 @@ require_once '../auth/session.php';
 require_once '../include/config.php';
 checkAccess('admin');
 
-// Check current release status first
-$stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'results_released'");
-$isReleased = $stmt->fetchColumn() == '1';
+// Get student ID from URL
+$student_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Get current term from settings
-$stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'current_term'");
-$currentTerm = $stmt->fetchColumn() ?: 'First Term';
-
-// Fetch terms from database
-$terms = getAcademicTerms($pdo);
-
-// Handle Release/Hold Result action
-$success_msg = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['toggle_results'])) {
-        $newStatus = $isReleased ? '0' : '1';
-        $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'results_released'");
-        if ($stmt->execute([$newStatus])) {
-            $isReleased = ($newStatus == '1');
-            $success_msg = $isReleased ? "Results have been released to all students successfully!" : "Results have been held successfully!";
-        }
-    }
-    
-    if (isset($_POST['save_term'])) {
-        $selectedTerm = $_POST['term'];
-        $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES ('current_term', ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-        if ($stmt->execute([$selectedTerm, $selectedTerm])) {
-            $currentTerm = $selectedTerm;
-            $success_msg = "Current term updated successfully!";
-        }
-    }
+if ($student_id <= 0) {
+    header("Location: upload_results.php");
+    exit;
 }
 
-// Fetch distinct students who have results
-$query = "
-    SELECT DISTINCT s.student_id, s.full_name, s.admission_no, s.image, s.class_name, s.session_of_year
-    FROM students s
-    JOIN student_results r ON s.student_id = r.student_id
-    ORDER BY s.full_name ASC
-";
-$stmt = $pdo->query($query);
-$studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch student details
+$stmt = $pdo->prepare("SELECT * FROM students WHERE student_id = ?");
+$stmt->execute([$student_id]);
+$student = $stmt->fetch();
+
+if (!$student) {
+    header("Location: upload_results.php");
+    exit;
+}
+
+// Fetch student results with staff info
+$stmt = $pdo->prepare("
+    SELECT r.*, st.full_name as staff_name, st.image as staff_image
+    FROM student_results r
+    LEFT JOIN staff st ON r.staff_id = st.staff_id
+    WHERE r.student_id = ?
+    ORDER BY r.subject ASC
+");
+$stmt->execute([$student_id]);
+$results = $stmt->fetchAll();
+
+// Calculate Average
+$totalScore = 0;
+$count = count($results);
+foreach ($results as $res) {
+    $totalScore += $res['score'];
+}
+$average = $count > 0 ? round($totalScore / $count, 1) : 0;
+
+// Helper grade remark logic if not in DB
+function getRemark($grade) {
+    switch ($grade) {
+        case 'A': return 'Excellent';
+        case 'B': return 'Very Good';
+        case 'C': return 'Good';
+        case 'D': return 'Fair';
+        case 'F': return 'Poor';
+        default: return 'N/A';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Result Management · T&T School</title>
+    <title><?php echo htmlspecialchars($student['full_name']); ?> · Result Slip | T&T School</title>
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
@@ -299,113 +305,86 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
             flex: 1;
         }
 
-        /* ----- RESULT MANAGEMENT SPECIFIC ----- */
-        .filter-card {
+        /* ----- STUDENT RESULT SPECIFIC ----- */
+        .student-profile-header {
             background: var(--white);
-            border-radius: 20px;
-            padding: 24px 28px;
-            box-shadow: 0 10px 25px var(--shadow);
+            border-radius: 24px;
+            padding: 28px 30px;
+            box-shadow: 0 12px 24px var(--shadow);
             margin-bottom: 30px;
             display: flex;
-            flex-wrap: wrap;
-            align-items: flex-end;
-            gap: 20px;
-        }
-
-        .filter-group {
-            flex: 1 1 180px;
-        }
-
-        .filter-group label {
-            display: block;
-            font-weight: 600;
-            color: var(--primary-dark);
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .filter-group select, .filter-group input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1.5px solid #e0e7ef;
-            border-radius: 12px;
-            font-family: 'Open Sans', sans-serif;
-            background: #fbfdff;
-            font-size: 1rem;
-        }
-
-        .btn {
-            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 6px 12px var(--shadow);
-            background: var(--white);
+            flex-wrap: wrap;
+            gap: 20px 30px;
+            border-left: 8px solid var(--primary-medium);
+        }
+
+        .student-avatar-large {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--light-bg);
+        }
+
+        .student-details h2 {
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+
+        .student-details .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            color: var(--text-light);
+        }
+
+        .student-details .meta i {
+            margin-right: 6px;
             color: var(--primary-medium);
-            border: 1px solid var(--primary-light);
-            gap: 8px;
         }
 
-        .btn-primary {
-            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
-            color: var(--white);
-            border: none;
+        .academic-summary {
+            margin-left: auto;
+            background: var(--light-bg);
+            padding: 12px 24px;
+            border-radius: 40px;
+            text-align: center;
         }
 
-        .btn-primary:hover {
-            background: linear-gradient(to right, var(--primary-medium), var(--accent-blue));
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-            border: none;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-            border: none;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary-light);
+        .academic-summary .term {
+            font-weight: 600;
             color: var(--primary-dark);
         }
 
-        /* Table section */
+        /* Table container */
         .table-container {
             background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 12px 28px var(--shadow);
+            border-radius: 24px;
+            box-shadow: 0 15px 30px var(--shadow);
             overflow: hidden;
         }
 
         .table-header {
-            padding: 20px 25px;
+            padding: 20px 28px;
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
         }
 
         .table-header h3 {
             font-size: 1.3rem;
         }
 
-        .result-count {
-            color: var(--text-light);
+        .result-badge {
+            background: var(--success);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .table-responsive {
@@ -416,7 +395,7 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .result-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 800px;
+            min-width: 700px;
         }
 
         .result-table thead {
@@ -424,7 +403,7 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .result-table th {
-            padding: 18px 20px;
+            padding: 18px 22px;
             text-align: left;
             font-weight: 600;
             color: var(--primary-dark);
@@ -434,7 +413,7 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .result-table td {
-            padding: 16px 20px;
+            padding: 18px 22px;
             border-bottom: 1px solid #eee;
             vertical-align: middle;
         }
@@ -443,50 +422,63 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background-color: #fafcff;
         }
 
-        .student-cell {
+        .subject-cell {
+            font-weight: 600;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .grade-a { background: #d4edda; color: #155724; }
+        .grade-b { background: #fff3cd; color: #856404; }
+        .grade-c { background: #f8d7da; color: #721c24; }
+        .grade-d { background: #e2e3e5; color: #383d41; }
+
+        .staff-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
-        .student-avatar-sm {
-            width: 40px;
-            height: 40px;
+        .staff-avatar {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--light-bg);
         }
 
-        .student-info h4 {
-            font-size: 1rem;
-            margin-bottom: 2px;
+        /* summary row */
+        .summary-row {
+            background: #f9fcff;
+            font-weight: 600;
         }
 
-        .student-info .student-id {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-
-        .action-btn {
-            background: rgba(30, 136, 229, 0.08);
-            color: var(--accent-blue);
-            border: none;
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+        .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 1rem;
-            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 4px 10px var(--shadow);
+            background: var(--white);
+            color: var(--primary-medium);
+            border: 1px solid var(--primary-light);
+            gap: 8px;
         }
 
-        .action-btn:hover {
-            background: var(--accent-blue);
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-medium));
             color: white;
-            transform: scale(1.05);
+            border: none;
         }
 
         .dashboard-footer {
@@ -518,12 +510,12 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
 
-        /* Responsive */
+        /* Mobile */
         @media (max-width: 700px) {
             .top-header { padding: 16px 20px; }
             .dashboard-content { padding: 20px 16px; }
-            .filter-card { padding: 20px; flex-direction: column; align-items: stretch; }
-            .btn { width: 100%; }
+            .student-profile-header { flex-direction: column; align-items: flex-start; }
+            .academic-summary { margin-left: 0; width: 100%; }
         }
     </style>
 </head>
@@ -542,113 +534,115 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <button class="menu-toggle" id="menuToggle">
                         <i class="fas fa-bars"></i>
                     </button>
+                    <a href="upload_results.php" style="margin-right: 20px; color: var(--primary-dark); font-size: 1.2rem; display: flex; align-items: center; text-decoration: none;">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
                     <div class="page-title">
-                        <h1>Result Management</h1>
+                        <h1>Student Result Slip</h1>
                     </div>
                 </div>
                 <div class="header-right">
-                    <div class="header-action"><i class="fas fa-bell"></i></div>
-                    <div class="header-action"><i class="fas fa-user-tie"></i></div>
+                    <div class="header-action"><i class="fas fa-print"></i></div>
+                    <div class="header-action"><i class="fas fa-download"></i></div>
+                    <div class="header-action"><i class="fas fa-user-graduate"></i></div>
                 </div>
             </div>
 
             <div class="dashboard-content">
-                <?php if (!empty($success_msg)): ?>
-                    <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #c3e6cb;">
-                        <i class="fas fa-check-circle"></i> <?php echo $success_msg; ?>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Filter & Release Card -->
-                <div class="filter-card">
-                    <form method="POST" class="filter-group">
-                        <label><i class="fas fa-layer-group"></i> Active Academic Term</label>
-                        <div style="display: flex; gap: 10px;">
-                            <select name="term" id="termSelect" style="flex: 1;">
-                                <?php foreach ($terms as $t): ?>
-                                    <option value="<?php echo $t; ?>" <?php echo ($t == $currentTerm) ? 'selected' : ''; ?>><?php echo $t; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="submit" name="save_term" class="btn btn-primary" title="Save Term Setting">
-                                <i class="fas fa-save"></i>
-                            </button>
+                <!-- Student Profile Summary -->
+                <div class="student-profile-header">
+                    <?php 
+                    $student_img = !empty($student['image']) ? '../assets/images/student/'.$student['image'] : 'https://ui-avatars.com/api/?name='.urlencode($student['full_name']).'&background=random';
+                    ?>
+                    <img class="student-avatar-large" src="<?php echo $student_img; ?>" alt="">
+                    <div class="student-details">
+                        <h2><?php echo htmlspecialchars($student['full_name']); ?></h2>
+                        <div class="meta">
+                            <span><i class="fas fa-id-card"></i> <?php echo htmlspecialchars($student['admission_no']); ?></span>
+                            <span><i class="fas fa-graduation-cap"></i> <?php echo htmlspecialchars($student['class_name'] ?? 'N/A'); ?></span>
+                            <span><i class="fas fa-calendar-alt"></i> <?php echo htmlspecialchars($student['session_of_year'] ?? 'N/A'); ?></span>
                         </div>
-                    </form>
-                    <form method="POST" class="filter-group" style="flex: 0 0 auto;">
-                        <button type="submit" name="toggle_results" class="btn <?php echo $isReleased ? 'btn-danger' : 'btn-success'; ?>" id="releaseResultBtn">
-                            <i class="fas <?php echo $isReleased ? 'fa-hand-paper' : 'fa-check-double'; ?>"></i> 
-                            <?php echo $isReleased ? 'Hold Result' : 'Release Result'; ?>
-                        </button>
-                    </form>
-                    <div class="filter-group" style="flex: 0 0 auto;">
-                        <button class="btn btn-outline" onclick="window.location.reload()">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
+                    </div>
+                    <div class="academic-summary">
+                        <div class="term"><i class="far fa-calendar-alt"></i> Current Session Overview</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary-dark);"><?php echo $average; ?><span style="font-size:1rem;">%</span></div>
+                        <div>Average Score</div>
                     </div>
                 </div>
 
                 <!-- Results Table -->
                 <div class="table-container">
                     <div class="table-header">
-                        <h3><i class="fas fa-users"></i> Student Results</h3>
-                        <span class="result-count"><?php echo count($studentsWithResults); ?> entries</span>
+                        <h3><i class="fas fa-book"></i> Subject Performance</h3>
+                        <?php if ($isReleased): ?>
+                            <span class="result-badge"><i class="fas fa-check-circle"></i> Results Released</span>
+                        <?php else: ?>
+                            <span class="result-badge" style="background: var(--warning);"><i class="fas fa-clock"></i> Not Released</span>
+                        <?php endif; ?>
                     </div>
                     <div class="table-responsive">
-                        <table class="result-table">
+                        <table class="result-table" id="resultTable">
                             <thead>
                                 <tr>
-                                    <th>Student Name</th>
-                                    <th>Session</th>
-                                    <th>Class</th>
-                                    <th style="text-align: center;">Action</th>
+                                    <th>Subject</th>
+                                    <th>CA (40)</th>
+                                    <th>Exam (60)</th>
+                                    <th>Total (100)</th>
+                                    <th>Grade</th>
+                                    <th>Remark</th>
+                                    <th>Staff</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (empty($studentsWithResults)): ?>
-                                    <tr>
-                                        <td colspan="4" style="text-align:center; padding: 40px; color: var(--text-light);">
-                                            <i class="fas fa-clipboard-list" style="font-size:2rem; margin-bottom:10px; display:block;"></i>
-                                            <h4>No results found</h4><p>Recorded results will appear here.</p>
-                                        </td>
-                                    </tr>
+                                <?php if (empty($results)): ?>
+                                    <tr><td colspan="7" style="text-align: center; padding: 30px;">No results recorded yet.</td></tr>
                                 <?php else: ?>
-                                    <?php foreach ($studentsWithResults as $s): ?>
+                                    <?php foreach ($results as $res): ?>
                                         <tr>
+                                            <td class="subject-cell"><?php echo htmlspecialchars($res['subject']); ?></td>
+                                            <td><?php echo number_format($res['ca_score'], 1); ?></td>
+                                            <td><?php echo number_format($res['exam_score'], 1); ?></td>
+                                            <td><strong><?php echo number_format($res['score'], 1); ?></strong></td>
+                                            <td><span class="grade-badge grade-<?php echo strtolower($res['grade']); ?>"><?php echo $res['grade']; ?></span></td>
+                                            <td><?php echo getRemark($res['grade']); ?></td>
                                             <td>
-                                                <div class="student-cell">
+                                                <div class="staff-info">
                                                     <?php 
-                                                    $img = !empty($s['image']) ? '../assets/images/student/'.$s['image'] : 'https://ui-avatars.com/api/?name='.urlencode($s['full_name']).'&background=random';
+                                                    $staff_img = !empty($res['staff_image']) ? '../assets/images/staff/'.$res['staff_image'] : 'https://ui-avatars.com/api/?name='.urlencode($res['staff_name']).'&background=random';
                                                     ?>
-                                                    <img class="student-avatar-sm" src="<?php echo $img; ?>" alt="">
-                                                    <div class="student-info">
-                                                        <h4><?php echo htmlspecialchars($s['full_name']); ?></h4>
-                                                        <span class="student-id"><?php echo htmlspecialchars($s['admission_no']); ?></span>
-                                                    </div>
+                                                    <img class="staff-avatar" src="<?php echo $staff_img; ?>" alt="">
+                                                    <span><?php echo htmlspecialchars($res['staff_name'] ?? 'N/A'); ?></span>
                                                 </div>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($s['session_of_year']); ?></td>
-                                            <td><strong><?php echo htmlspecialchars($s['class_name'] ?? 'N/A'); ?></strong></td>
-                                            <td style="text-align: center;">
-                                                <a href="view_student_result.php?id=<?php echo $s['student_id']; ?>" class="action-btn" title="View result details"><i class="fas fa-eye"></i></a>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
+                                    <!-- Summary Average Row -->
+                                    <tr class="summary-row">
+                                        <td colspan="3" style="text-align: right; font-weight: 700;">Overall Average</td>
+                                        <td><strong><?php echo $average; ?>%</strong></td>
+                                        <td colspan="3"></td>
+                                    </tr>
                                 <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                <!-- Action buttons -->
+                <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px;">
+                    <button class="btn" onclick="window.print()"><i class="fas fa-print"></i> Print Slip</button>
+                    <button class="btn btn-primary" id="downloadPdfBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+                </div>
+
                 <div class="dashboard-footer">
-                    <p>© 2025 T&T School Management System · Result Administration</p>
+                    <p>© 2025 T&T School Management System · Official Result Slip</p>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
-    (function(){
-        "use strict";
-
+    (function() {
         // Sidebar Toggle Logic
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
@@ -656,8 +650,8 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (menuToggle) {
             menuToggle.addEventListener('click', () => {
-                sidebar.classList.add('active');
-                overlay.classList.add('active');
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
             });
         }
 
@@ -667,6 +661,11 @@ $studentsWithResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 overlay.classList.remove('active');
             });
         }
+
+        // Download PDF simulation
+        document.getElementById('downloadPdfBtn').addEventListener('click', function() {
+            alert('📄 PDF generation started. Your result slip will download shortly. (Demo)');
+        });
     })();
 </script>
 </body>

@@ -6,6 +6,29 @@ checkAccess('admin');
 // Fetch current school fee
 $stmt = $pdo->query("SELECT fee_amount FROM school_fees WHERE fee_id = 1");
 $schoolFee = $stmt->fetchColumn() ?: 47000.00;
+
+// Fetch student fee data dynamically
+$sql = "SELECT s.admission_no as id, s.full_name as name, 
+               COALESCE(SUM(CASE WHEN p.status = 'success' THEN p.amount ELSE 0 END), 0) as paid,
+               MAX(p.created_at) as lastTransaction,
+               MAX(p.reference) as transactionId
+        FROM students s
+        LEFT JOIN payments p ON s.student_id = p.student_id
+        GROUP BY s.student_id, s.admission_no, s.full_name";
+$stmt = $pdo->query($sql);
+$dbStudents = $stmt->fetchAll();
+
+// Format data for JavaScript
+$formattedStudentsData = array_map(function($student) use ($schoolFee) {
+    return [
+        'id' => $student['id'],
+        'name' => $student['name'],
+        'totalFee' => (float)$schoolFee,
+        'paid' => (float)$student['paid'],
+        'lastTransaction' => $student['lastTransaction'] ? date('Y-m-d', strtotime($student['lastTransaction'])) : null,
+        'transactionId' => $student['transactionId']
+    ];
+}, $dbStudents);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -710,21 +733,10 @@ $schoolFee = $stmt->fetchColumn() ?: 47000.00;
         });
     }
 
-    // ---------- MOCK DATA ----------
-    // Student fee records with payment history
+    // ---------- DYNAMIC DATA ----------
+    // Student fee records with payment history from database
     const schoolFee = <?php echo $schoolFee; ?>;
-    const studentsData = [
-        { id: "STU-1001", name: "Olivia Chen", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-15", transactionId: "TXN-001" },
-        { id: "STU-1002", name: "Liam Rodriguez", totalFee: schoolFee, paid: 15000, lastTransaction: "2025-02-28", transactionId: "TXN-002" },
-        { id: "STU-1003", name: "Emma Thompson", totalFee: schoolFee, paid: 0, lastTransaction: null, transactionId: null },
-        { id: "STU-1004", name: "Noah Williams", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-10", transactionId: "TXN-003" },
-        { id: "STU-1005", name: "Ava Johnson", totalFee: schoolFee, paid: 20000, lastTransaction: "2025-03-05", transactionId: "TXN-004" },
-        { id: "STU-1006", name: "Mason Brown", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-02-20", transactionId: "TXN-005" },
-        { id: "STU-1007", name: "Sophia Davis", totalFee: schoolFee, paid: 5000, lastTransaction: "2025-03-01", transactionId: "TXN-006" },
-        { id: "STU-1008", name: "Ethan Miller", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-12", transactionId: "TXN-007" },
-        { id: "STU-1009", name: "Isabella Wilson", totalFee: schoolFee, paid: schoolFee, lastTransaction: "2025-03-08", transactionId: "TXN-008" },
-        { id: "STU-1010", name: "James Martinez", totalFee: schoolFee, paid: 0, lastTransaction: null, transactionId: null }
-    ];
+    const studentsData = <?php echo json_encode($formattedStudentsData); ?>;
 
     // Function to format currency
     function formatCurrency(amount) {
