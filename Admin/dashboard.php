@@ -1,6 +1,87 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('admin');
+
+// Fetch Stats
+$total_students = $pdo->query("SELECT COUNT(*) FROM students")->fetchColumn();
+$total_teachers = $pdo->query("SELECT COUNT(*) FROM staff")->fetchColumn();
+$annual_revenue = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'success' AND YEAR(created_at) = YEAR(CURRENT_DATE)")->fetchColumn() ?: 0;
+
+// Enrollment Trend (Last 12 Months)
+$enrollment_data = [];
+$months = [];
+for ($i = 11; $i >= 0; $i--) {
+    $date = date('Y-m', strtotime("-$i months"));
+    $month_name = date('M Y', strtotime("-$i months"));
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM students WHERE DATE_FORMAT(created_at, '%Y-%m') = ?");
+    $stmt->execute([$date]);
+    $enrollment_data[] = $stmt->fetchColumn();
+    $months[] = $month_name;
+}
+
+// Fee Collection Status (Paid vs Unpaid)
+$school_fee = $pdo->query("SELECT fee_amount FROM school_fees WHERE fee_id = 1")->fetchColumn() ?: 47000;
+$paid_students = $pdo->query("SELECT COUNT(*) FROM (SELECT student_id FROM payments WHERE status = 'success' GROUP BY student_id HAVING SUM(amount) >= $school_fee) as paid_count")->fetchColumn();
+$unpaid_students = max(0, $total_students - $paid_students);
+
+// Recent Activity (Last 24 Hours)
+$activities = [];
+
+// New Students
+$stmt = $pdo->query("SELECT full_name, created_at, 'student' as type FROM students WHERE created_at >= NOW() - INTERVAL 1 DAY");
+while ($row = $stmt->fetch()) {
+    $activities[] = $row;
+}
+
+// New Staff
+$stmt = $pdo->query("SELECT full_name, created_at, 'teacher' as type FROM staff WHERE created_at >= NOW() - INTERVAL 1 DAY");
+while ($row = $stmt->fetch()) {
+    $activities[] = $row;
+}
+
+// New Payments
+$stmt = $pdo->query("SELECT s.full_name, p.amount, p.created_at, 'fee' as type FROM payments p JOIN students s ON p.student_id = s.student_id WHERE p.status = 'success' AND p.created_at >= NOW() - INTERVAL 1 DAY");
+while ($row = $stmt->fetch()) {
+    $activities[] = $row;
+}
+
+// Sort activities by date DESC
+usort($activities, function($a, $b) {
+    return strtotime($b['created_at']) - strtotime($a['created_at']);
+});
+
+// Recently Added Students
+$recent_students = $pdo->query("SELECT * FROM students ORDER BY created_at DESC LIMIT 5")->fetchAll();
+
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $string = array(
+        'y' => 'year',
+        'm' => 'month',
+        'w' => 'week',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'minute',
+        's' => 'second',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' ago' : 'just now';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +91,7 @@ checkAccess('admin');
     <title>T&T School - Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary-dark: #003366;
@@ -137,34 +218,6 @@ checkAccess('admin');
             font-weight: 600;
         }
         
-        .menu-item.has-submenu {
-            position: relative;
-        }
-        
-        .submenu {
-            padding-left: 55px;
-            background-color: rgba(0, 0, 0, 0.1);
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .submenu.active {
-            max-height: 300px;
-        }
-        
-        .submenu-item {
-            padding: 12px 0;
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            display: block;
-            transition: color 0.3s;
-        }
-        
-        .submenu-item:hover {
-            color: var(--white);
-        }
-        
         .sidebar-footer {
             padding: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -256,21 +309,6 @@ checkAccess('admin');
             cursor: pointer;
         }
         
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: var(--danger);
-            color: white;
-            font-size: 0.7rem;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         .header-action i {
             font-size: 1.3rem;
             color: var(--primary-medium);
@@ -289,7 +327,7 @@ checkAccess('admin');
         /* Stats Cards */
         .stats-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
         }
@@ -318,10 +356,6 @@ checkAccess('admin');
             border-left-color: var(--success);
         }
         
-        .stat-card.classes {
-            border-left-color: var(--warning);
-        }
-        
         .stat-card.revenue {
             border-left-color: var(--danger);
         }
@@ -345,11 +379,6 @@ checkAccess('admin');
         .stat-card.teachers .stat-icon {
             background-color: rgba(40, 167, 69, 0.1);
             color: var(--success);
-        }
-        
-        .stat-card.classes .stat-icon {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
         }
         
         .stat-card.revenue .stat-icon {
@@ -424,17 +453,6 @@ checkAccess('admin');
             font-size: 1.3rem;
         }
         
-        .view-all {
-            color: var(--primary-medium);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .view-all:hover {
-            text-decoration: underline;
-        }
-        
         .activity-list {
             list-style: none;
         }
@@ -476,11 +494,6 @@ checkAccess('admin');
             color: var(--danger);
         }
         
-        .activity-icon.event {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
         .activity-details {
             flex: 1;
         }
@@ -509,6 +522,13 @@ checkAccess('admin');
             border-bottom: 1px solid #eee;
             display: flex;
             align-items: center;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.3s;
+        }
+        
+        .action-item:hover {
+            background-color: var(--light-bg);
         }
         
         .action-item:last-child {
@@ -600,52 +620,6 @@ checkAccess('admin');
         .student-id {
             font-size: 0.85rem;
             color: var(--text-light);
-        }
-        
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-badge.active {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-        
-        .status-badge.inactive {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        
-        .action-btn.view {
-            background-color: rgba(30, 136, 229, 0.1);
-            color: var(--accent-blue);
-        }
-        
-        .action-btn.edit {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
-        .action-btn.delete {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-        
-        .action-btn:hover {
-            opacity: 0.8;
         }
         
         /* Footer */
@@ -747,7 +721,6 @@ checkAccess('admin');
 <body>
     <div class="container">
         <!-- Sidebar -->
-        <!-- Sidebar -->
         <?php include '../include/admin_sidebar.php'; ?>
         
         <!-- Overlay for mobile -->
@@ -765,26 +738,6 @@ checkAccess('admin');
                         <h1>Dashboard Overview</h1>
                     </div>
                 </div>
-                
-                <div class="header-right">
-                    <div class="header-action">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    
-                    <div class="header-action">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">5</span>
-                    </div>
-                    
-                    <div class="header-action">
-                        <i class="fas fa-envelope"></i>
-                        <span class="notification-badge">3</span>
-                    </div>
-                    
-                    <div class="header-action">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                </div>
             </div>
             
             <!-- Dashboard Content -->
@@ -796,7 +749,7 @@ checkAccess('admin');
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>1,245</h3>
+                            <h3><?php echo number_format($total_students); ?></h3>
                             <p>Total Students</p>
                         </div>
                     </div>
@@ -806,27 +759,17 @@ checkAccess('admin');
                             <i class="fas fa-chalkboard-teacher"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>68</h3>
-                            <p>Total Teachers</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card classes">
-                        <div class="stat-icon">
-                            <i class="fas fa-book"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>42</h3>
-                            <p>Active Classes</p>
+                            <h3><?php echo number_format($total_teachers); ?></h3>
+                            <p>Total Staff</p>
                         </div>
                     </div>
                     
                     <div class="stat-card revenue">
                         <div class="stat-icon">
-                            <i class="fas fa-dollar-sign"></i>
+                            <i class="fas fa-naira-sign"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>$124,580</h3>
+                            <h3>₦<?php echo number_format($annual_revenue); ?></h3>
                             <p>Annual Revenue</p>
                         </div>
                     </div>
@@ -837,42 +780,18 @@ checkAccess('admin');
                     <div class="chart-card">
                         <div class="chart-header">
                             <h3>Student Enrollment Trend</h3>
-                            <select class="period-select">
-                                <option>Last 7 days</option>
-                                <option>Last 30 days</option>
-                                <option selected>Last 12 months</option>
-                            </select>
                         </div>
                         <div class="chart-container">
-                            <!-- Chart will be implemented with Chart.js in real application -->
-                            <div style="height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f9f9f9; border-radius: 8px;">
-                                <div style="text-align: center; color: #888;">
-                                    <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 10px;"></i>
-                                    <p>Student Enrollment Chart</p>
-                                    <p style="font-size: 0.9rem;">(Chart.js would be implemented here)</p>
-                                </div>
-                            </div>
+                            <canvas id="enrollmentChart"></canvas>
                         </div>
                     </div>
                     
                     <div class="chart-card">
                         <div class="chart-header">
                             <h3>Fee Collection Status</h3>
-                            <select class="period-select">
-                                <option>Current Month</option>
-                                <option selected>Current Quarter</option>
-                                <option>Current Year</option>
-                            </select>
                         </div>
                         <div class="chart-container">
-                            <!-- Chart will be implemented with Chart.js in real application -->
-                            <div style="height: 100%; display: flex; align-items: center; justify-content: center; background-color: #f9f9f9; border-radius: 8px;">
-                                <div style="text-align: center; color: #888;">
-                                    <i class="fas fa-chart-pie" style="font-size: 3rem; margin-bottom: 10px;"></i>
-                                    <p>Fee Collection Chart</p>
-                                    <p style="font-size: 0.9rem;">(Chart.js would be implemented here)</p>
-                                </div>
-                            </div>
+                            <canvas id="feeChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -881,64 +800,36 @@ checkAccess('admin');
                 <div class="activity-actions">
                     <div class="activity-card">
                         <div class="card-header">
-                            <h3>Recent Activity</h3>
-                            <a href="#" class="view-all">View All</a>
+                            <h3>Recent Activity (Last 24h)</h3>
                         </div>
                         <ul class="activity-list">
-                            <li class="activity-item">
-                                <div class="activity-icon student">
-                                    <i class="fas fa-user-plus"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <h4>New Student Registered</h4>
-                                    <p>Michael Johnson enrolled in Grade 10</p>
-                                </div>
-                                <div class="activity-time">10 min ago</div>
-                            </li>
-                            
-                            <li class="activity-item">
-                                <div class="activity-icon fee">
-                                    <i class="fas fa-money-check-alt"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <h4>Fee Payment Received</h4>
-                                    <p>Sarah Williams paid quarterly fee</p>
-                                </div>
-                                <div class="activity-time">1 hour ago</div>
-                            </li>
-                            
-                            <li class="activity-item">
-                                <div class="activity-icon teacher">
-                                    <i class="fas fa-chalkboard-teacher"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <h4>New Teacher Joined</h4>
-                                    <p>Mr. Robert Chen joined as Physics teacher</p>
-                                </div>
-                                <div class="activity-time">3 hours ago</div>
-                            </li>
-                            
-                            <li class="activity-item">
-                                <div class="activity-icon event">
-                                    <i class="fas fa-calendar-day"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <h4>Upcoming Event</h4>
-                                    <p>Annual Sports Day scheduled for next week</p>
-                                </div>
-                                <div class="activity-time">1 day ago</div>
-                            </li>
-                            
-                            <li class="activity-item">
-                                <div class="activity-icon student">
-                                    <i class="fas fa-award"></i>
-                                </div>
-                                <div class="activity-details">
-                                    <h4>Student Achievement</h4>
-                                    <p>Emily Davis won Science Fair competition</p>
-                                </div>
-                                <div class="activity-time">2 days ago</div>
-                            </li>
+                            <?php if (empty($activities)): ?>
+                                <li class="activity-item">No recent activities in the last 24 hours.</li>
+                            <?php else: ?>
+                                <?php foreach ($activities as $act): ?>
+                                    <li class="activity-item">
+                                        <div class="activity-icon <?php echo $act['type']; ?>">
+                                            <i class="fas <?php 
+                                                if($act['type'] == 'student') echo 'fa-user-plus';
+                                                elseif($act['type'] == 'teacher') echo 'fa-chalkboard-teacher';
+                                                elseif($act['type'] == 'fee') echo 'fa-money-check-alt';
+                                            ?>"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <h4><?php 
+                                                if($act['type'] == 'student') echo 'New Student Registered';
+                                                elseif($act['type'] == 'teacher') echo 'New Teacher Registered';
+                                                elseif($act['type'] == 'fee') echo 'Fee Payment Received';
+                                            ?></h4>
+                                            <p><?php 
+                                                if($act['type'] == 'fee') echo htmlspecialchars($act['full_name']) . " paid ₦" . number_format($act['amount']);
+                                                else echo htmlspecialchars($act['full_name']);
+                                            ?></p>
+                                        </div>
+                                        <div class="activity-time"><?php echo time_elapsed_string($act['created_at']); ?></div>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </ul>
                     </div>
                     
@@ -947,7 +838,7 @@ checkAccess('admin');
                             <h3>Quick Actions</h3>
                         </div>
                         <ul class="actions-list">
-                            <li class="action-item">
+                            <a href="add_new_student.php" class="action-item">
                                 <div class="action-icon">
                                     <i class="fas fa-user-plus"></i>
                                 </div>
@@ -955,47 +846,17 @@ checkAccess('admin');
                                     <h4>Add New Student</h4>
                                     <p>Register a new student</p>
                                 </div>
-                            </li>
+                            </a>
                             
-                            <li class="action-item">
+                            <a href="add_new_staff.php" class="action-item">
                                 <div class="action-icon">
-                                    <i class="fas fa-file-invoice"></i>
+                                    <i class="fas fa-user-tie"></i>
                                 </div>
                                 <div class="action-details">
-                                    <h4>Generate Fee Receipt</h4>
-                                    <p>Create fee receipt for student</p>
+                                    <h4>Add New Staff</h4>
+                                    <p>Register a new staff member</p>
                                 </div>
-                            </li>
-                            
-                            <li class="action-item">
-                                <div class="action-icon">
-                                    <i class="fas fa-calendar-plus"></i>
-                                </div>
-                                <div class="action-details">
-                                    <h4>Schedule Event</h4>
-                                    <p>Add new school event</p>
-                                </div>
-                            </li>
-                            
-                            <li class="action-item">
-                                <div class="action-icon">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="action-details">
-                                    <h4>Generate Report</h4>
-                                    <p>Create attendance report</p>
-                                </div>
-                            </li>
-                            
-                            <li class="action-item">
-                                <div class="action-icon">
-                                    <i class="fas fa-envelope"></i>
-                                </div>
-                                <div class="action-details">
-                                    <h4>Send Notification</h4>
-                                    <p>Notify parents/students</p>
-                                </div>
-                            </li>
+                            </a>
                         </ul>
                     </div>
                 </div>
@@ -1004,7 +865,6 @@ checkAccess('admin');
                 <div class="recent-table-card">
                     <div class="card-header">
                         <h3>Recently Added Students</h3>
-                        <a href="#" class="view-all">View All Students</a>
                     </div>
                     
                     <div class="table-responsive">
@@ -1012,123 +872,32 @@ checkAccess('admin');
                             <thead>
                                 <tr>
                                     <th>Student Name</th>
-                                    <th>Grade</th>
-                                    <th>Parent Contact</th>
+                                    <th>Session</th>
+                                    <th>Class</th>
+                                    <th>Parent/Guardian</th>
                                     <th>Enrollment Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>
-                                        <div class="student-info">
-                                            <div class="student-avatar">
-                                                <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Student">
+                                <?php foreach ($recent_students as $student): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="student-info">
+                                                <div class="student-avatar">
+                                                    <img src="../assets/images/student/<?php echo $student['image'] ?: 'default.png'; ?>" alt="Student">
+                                                </div>
+                                                <div>
+                                                    <div class="student-name"><?php echo htmlspecialchars($student['full_name']); ?></div>
+                                                    <div class="student-id">ID: <?php echo htmlspecialchars($student['admission_no']); ?></div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div class="student-name">Michael Johnson</div>
-                                                <div class="student-id">ID: STU-2023-045</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Grade 10</td>
-                                    <td>+1 (555) 123-4567</td>
-                                    <td>2023-09-15</td>
-                                    <td><span class="status-badge active">Active</span></td>
-                                    <td>
-                                        <button class="action-btn view">View</button>
-                                        <button class="action-btn edit">Edit</button>
-                                    </td>
-                                </tr>
-                                
-                                <tr>
-                                    <td>
-                                        <div class="student-info">
-                                            <div class="student-avatar">
-                                                <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Student">
-                                            </div>
-                                            <div>
-                                                <div class="student-name">Sarah Williams</div>
-                                                <div class="student-id">ID: STU-2023-046</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Grade 9</td>
-                                    <td>+1 (555) 234-5678</td>
-                                    <td>2023-09-10</td>
-                                    <td><span class="status-badge active">Active</span></td>
-                                    <td>
-                                        <button class="action-btn view">View</button>
-                                        <button class="action-btn edit">Edit</button>
-                                    </td>
-                                </tr>
-                                
-                                <tr>
-                                    <td>
-                                        <div class="student-info">
-                                            <div class="student-avatar">
-                                                <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Student">
-                                            </div>
-                                            <div>
-                                                <div class="student-name">Emily Davis</div>
-                                                <div class="student-id">ID: STU-2023-047</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Grade 11</td>
-                                    <td>+1 (555) 345-6789</td>
-                                    <td>2023-09-05</td>
-                                    <td><span class="status-badge active">Active</span></td>
-                                    <td>
-                                        <button class="action-btn view">View</button>
-                                        <button class="action-btn edit">Edit</button>
-                                    </td>
-                                </tr>
-                                
-                                <tr>
-                                    <td>
-                                        <div class="student-info">
-                                            <div class="student-avatar">
-                                                <img src="https://randomuser.me/api/portraits/men/22.jpg" alt="Student">
-                                            </div>
-                                            <div>
-                                                <div class="student-name">James Wilson</div>
-                                                <div class="student-id">ID: STU-2023-048</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Grade 8</td>
-                                    <td>+1 (555) 456-7890</td>
-                                    <td>2023-08-28</td>
-                                    <td><span class="status-badge active">Active</span></td>
-                                    <td>
-                                        <button class="action-btn view">View</button>
-                                        <button class="action-btn edit">Edit</button>
-                                    </td>
-                                </tr>
-                                
-                                <tr>
-                                    <td>
-                                        <div class="student-info">
-                                            <div class="student-avatar">
-                                                <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Student">
-                                            </div>
-                                            <div>
-                                                <div class="student-name">Olivia Martinez</div>
-                                                <div class="student-id">ID: STU-2023-049</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>Grade 7</td>
-                                    <td>+1 (555) 567-8901</td>
-                                    <td>2023-08-20</td>
-                                    <td><span class="status-badge inactive">Inactive</span></td>
-                                    <td>
-                                        <button class="action-btn view">View</button>
-                                        <button class="action-btn edit">Edit</button>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($student['session_of_year']); ?></td>
+                                        <td><?php echo htmlspecialchars($student['class_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($student['parent_guardian']); ?></td>
+                                        <td><?php echo date('Y-m-d', strtotime($student['created_at'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -1137,17 +906,62 @@ checkAccess('admin');
             
             <!-- Footer -->
             <div class="dashboard-footer">
-                <p>&copy; 2023 T&T School Management System. All rights reserved. | Version 2.1.5</p>
+                <p>&copy; 2023 T&T School Management System. All rights reserved.</p>
             </div>
         </div>
     </div>
 
     <script>
+        // Enrollment Chart
+        const enrollmentCtx = document.getElementById('enrollmentChart').getContext('2d');
+        new Chart(enrollmentCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($months); ?>,
+                datasets: [{
+                    label: 'New Students',
+                    data: <?php echo json_encode($enrollment_data); ?>,
+                    borderColor: '#1E88E5',
+                    backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+
+        // Fee Chart
+        const feeCtx = document.getElementById('feeChart').getContext('2d');
+        new Chart(feeCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Paid', 'Unpaid'],
+                datasets: [{
+                    data: [<?php echo $paid_students; ?>, <?php echo $unpaid_students; ?>],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
         // Mobile sidebar toggle
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
-        const mainContent = document.getElementById('mainContent');
         
         menuToggle.addEventListener('click', () => {
             sidebar.classList.toggle('active');
@@ -1158,122 +972,7 @@ checkAccess('admin');
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
-        
-        // Close sidebar when clicking on a menu item (for mobile)
-        document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-            item.addEventListener('click', () => {
-                if (window.innerWidth < 992) {
-                    sidebar.classList.remove('active');
-                    overlay.classList.remove('active');
-                }
-            });
-        });
-        
-        // Simulate chart data (in a real app, you would use Chart.js or similar)
-        function updateStats() {
-            // Simulate real-time updates to stats
-            const statCards = document.querySelectorAll('.stat-info h3');
-            
-            // Update student count with a slight random variation
-            let studentCount = parseInt(statCards[0].textContent.replace(/,/g, ''));
-            studentCount += Math.floor(Math.random() * 3);
-            statCards[0].textContent = studentCount.toLocaleString();
-            
-            // Update teacher count
-            let teacherCount = parseInt(statCards[1].textContent.replace(/,/g, ''));
-            if (Math.random() > 0.95) teacherCount += 1; // Rare teacher addition
-            statCards[1].textContent = teacherCount;
-            
-            // Update revenue (adding small random amount)
-            let revenue = parseFloat(statCards[3].textContent.replace(/[$,]/g, ''));
-            revenue += Math.random() * 50;
-            statCards[3].textContent = '$' + revenue.toLocaleString(undefined, {maximumFractionDigits: 0});
-        }
-        
-        // Update stats every 30 seconds
-        setInterval(updateStats, 30000);
-        
-        // Add active class to clicked menu items
-        document.querySelectorAll('.sidebar-menu .menu-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Don't prevent default for anchor tags
-                if(this.getAttribute('href') === '#') {
-                    e.preventDefault();
-                }
-                
-                // Remove active class from all menu items
-                document.querySelectorAll('.sidebar-menu .menu-item').forEach(i => {
-                    i.classList.remove('active');
-                });
-                
-                // Add active class to clicked item
-                this.classList.add('active');
-            });
-        });
-        
-        // Simulate notification click
-        document.querySelectorAll('.header-action').forEach(action => {
-            action.addEventListener('click', function() {
-                if(this.querySelector('.notification-badge')) {
-                    // In a real app, this would mark notifications as read
-                    const badge = this.querySelector('.notification-badge');
-                    const currentCount = parseInt(badge.textContent);
-                    
-                    if(currentCount > 0) {
-                        badge.textContent = currentCount - 1;
-                        
-                        // Hide badge if count reaches 0
-                        if(currentCount - 1 === 0) {
-                            badge.style.display = 'none';
-                        }
-                    }
-                }
-            });
-        });
-        
-        // Quick action buttons functionality
-        document.querySelectorAll('.action-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const actionTitle = this.querySelector('h4').textContent;
-                alert(`"${actionTitle}" action would be performed here.`);
-            });
-        });
-        
-        // Table action buttons
-        document.querySelectorAll('.action-btn.view').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const studentName = this.closest('tr').querySelector('.student-name').textContent;
-                alert(`Viewing details for ${studentName}`);
-            });
-        });
-        
-        document.querySelectorAll('.action-btn.edit').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const studentName = this.closest('tr').querySelector('.student-name').textContent;
-                alert(`Editing ${studentName}'s information`);
-            });
-        });
-        
-        // Table row click (view details)
-        document.querySelectorAll('tbody tr').forEach(row => {
-            row.addEventListener('click', function() {
-                const studentName = this.querySelector('.student-name').textContent;
-                alert(`Viewing full profile for ${studentName}`);
-            });
-        });
-        
-        // Period select change
-        document.querySelectorAll('.period-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const period = this.value;
-                const chartTitle = this.closest('.chart-header').querySelector('h3').textContent;
-                alert(`Updating ${chartTitle} for ${period}`);
-            });
-        });
-        
-        // Handle window resize
+
         window.addEventListener('resize', function() {
             if(window.innerWidth >= 992) {
                 sidebar.classList.remove('active');

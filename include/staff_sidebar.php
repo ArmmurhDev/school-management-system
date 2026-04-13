@@ -55,7 +55,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'staff') {
             <span class="menu-text">Enter Results</span>
         </a>
         
-        <a href="#" class="menu-item">
+        <a href="message.php" class="menu-item <?php echo ($currentPage == 'message.php') ? 'active' : ''; ?>">
             <i class="fas fa-envelope"></i>
             <span class="menu-text">Messages</span>
         </a>

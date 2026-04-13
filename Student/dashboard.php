@@ -1,6 +1,36 @@
 <?php
 require_once '../auth/session.php';
+require_once '../include/config.php';
 checkAccess('student');
+
+$student_id = $_SESSION['user_id'];
+
+// Check if results are released
+$stmt = $pdo->query("SELECT setting_value FROM settings WHERE setting_key = 'results_released'");
+$isReleased = $stmt->fetchColumn() == '1';
+
+// Fetch average if released
+$average = 0;
+if ($isReleased) {
+    $stmt = $pdo->prepare("SELECT score FROM student_results WHERE student_id = ?");
+    $stmt->execute([$student_id]);
+    $results = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $count = count($results);
+    if ($count > 0) {
+        $average = round(array_sum($results) / $count, 1);
+    }
+}
+
+// Fetch message count from staff (last 3 days only)
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM messages WHERE sender_role = 'staff' AND (recipient_id = ? OR recipient_id IS NULL) AND created_at >= NOW() - INTERVAL 3 DAY");
+$stmt->execute([$student_id]);
+$messageCount = $stmt->fetchColumn();
+
+// Fetch student current class
+$stmt = $pdo->prepare("SELECT class_name FROM students WHERE student_id = ?");
+$stmt->execute([$student_id]);
+$studentClass = $stmt->fetchColumn() ?: 'N/A';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,13 +119,9 @@ checkAccess('student');
         .stat-card.attendance {
             border-left-color: var(--success);
         }
-        
-        .stat-card.assignments {
-            border-left-color: var(--warning);
-        }
-        
-        .stat-card.events {
-            border-left-color: var(--danger);
+
+        .stat-card.class {
+            border-left-color: var(--primary-medium);
         }
         
         .stat-icon {
@@ -118,15 +144,10 @@ checkAccess('student');
             background-color: rgba(40, 167, 69, 0.1);
             color: var(--success);
         }
-        
-        .stat-card.assignments .stat-icon {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
-        .stat-card.events .stat-icon {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
+
+        .stat-card.class .stat-icon {
+            background-color: rgba(0, 51, 102, 0.1);
+            color: var(--primary-medium);
         }
         
         .stat-info h3 {
@@ -139,21 +160,6 @@ checkAccess('student');
             font-size: 0.95rem;
         }
         
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-            align-items: start;
-        }
-        
-        @media (max-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
         /* Dashboard Card Base */
         .dashboard-card {
             background-color: var(--white);
@@ -162,338 +168,6 @@ checkAccess('student');
             box-shadow: 0 5px 15px var(--shadow);
             margin-bottom: 30px;
             height: auto;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-        
-        .card-header h3 {
-            font-size: 1.3rem;
-        }
-        
-        .view-all {
-            color: var(--primary-medium);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .view-all:hover {
-            color: var(--accent-blue);
-            text-decoration: underline;
-        }
-        
-        /* Grades Table */
-        .grades-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .grades-table thead {
-            background-color: var(--light-bg);
-        }
-        
-        .grades-table th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--primary-dark);
-            border-bottom: 2px solid #eee;
-        }
-        
-        .grades-table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .grades-table tbody tr:hover {
-            background-color: #f9f9f9;
-        }
-        
-        .course-info {
-            display: flex;
-            align-items: center;
-        }
-        
-        .course-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background-color: var(--light-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: var(--primary-medium);
-        }
-        
-        .course-name {
-            font-weight: 500;
-            margin-bottom: 3px;
-        }
-        
-        .course-teacher {
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-        
-        .grade-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .grade-a {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-        
-        .grade-b {
-            background-color: rgba(23, 162, 184, 0.1);
-            color: var(--info);
-        }
-        
-        .grade-c {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
-        .grade-d {
-            background-color: rgba(253, 126, 20, 0.1);
-            color: #fd7e14;
-        }
-        
-        .grade-f {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-        }
-        
-        /* Schedule List */
-        .schedule-list {
-            list-style: none;
-        }
-        
-        .schedule-item {
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-        }
-        
-        .schedule-item:last-child {
-            border-bottom: none;
-        }
-        
-        .schedule-time {
-            width: 80px;
-            flex-shrink: 0;
-        }
-        
-        .schedule-time .time {
-            font-weight: 600;
-            color: var(--primary-dark);
-            font-size: 1rem;
-        }
-        
-        .schedule-time .duration {
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-        
-        .schedule-details {
-            flex: 1;
-            padding-left: 20px;
-            border-left: 3px solid var(--primary-light);
-        }
-        
-        .schedule-details h4 {
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        
-        .schedule-details p {
-            font-size: 0.9rem;
-            color: var(--text-light);
-        }
-        
-        .schedule-room {
-            display: inline-block;
-            padding: 3px 10px;
-            background-color: var(--light-bg);
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-top: 8px;
-        }
-        
-        /* Announcements List */
-        .announcements-list {
-            list-style: none;
-        }
-        
-        .announcement-item {
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .announcement-item:last-child {
-            border-bottom: none;
-        }
-        
-        .announcement-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .announcement-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--light-bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: var(--primary-medium);
-        }
-        
-        .announcement-title {
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 5px;
-        }
-        
-        .announcement-meta {
-            display: flex;
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-        
-        .announcement-meta span {
-            margin-right: 15px;
-        }
-        
-        .announcement-content {
-            color: var(--text-dark);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-        
-        /* Upcoming Assignments */
-        .assignments-list {
-            list-style: none;
-        }
-        
-        .assignment-item {
-            padding: 20px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: flex-start;
-        }
-        
-        .assignment-item:last-child {
-            border-bottom: none;
-        }
-        
-        .assignment-due {
-            width: 70px;
-            flex-shrink: 0;
-            text-align: center;
-            margin-right: 20px;
-        }
-        
-        .assignment-day {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            line-height: 1;
-        }
-        
-        .assignment-month {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            text-transform: uppercase;
-        }
-        
-        .assignment-details {
-            flex: 1;
-        }
-        
-        .assignment-details h4 {
-            font-size: 1rem;
-            margin-bottom: 8px;
-        }
-        
-        .assignment-details p {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-bottom: 10px;
-        }
-        
-        .assignment-course {
-            display: inline-block;
-            padding: 3px 10px;
-            background-color: var(--light-bg);
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-right: 10px;
-        }
-        
-        .assignment-status {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status-pending {
-            background-color: rgba(255, 193, 7, 0.1);
-            color: var(--warning);
-        }
-        
-        .status-submitted {
-            background-color: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-        
-        /* Progress Chart */
-        .progress-chart {
-            background-color: var(--white);
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 5px 15px var(--shadow);
-            margin-bottom: 40px;
-        }
-        
-        .chart-container {
-            height: 300px;
-            position: relative;
-            margin-top: 20px;
-        }
-        
-        .chart-placeholder {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            color: #888;
-            flex-direction: column;
-        }
-        
-        .chart-placeholder i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: var(--primary-light);
         }
         
         /* Quick Links */
@@ -560,16 +234,6 @@ checkAccess('student');
         }
         
         /* Responsive Styles */
-        @media (max-width: 1200px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .welcome-stats {
-                display: none;
-            }
-        }
-        
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -633,22 +297,6 @@ checkAccess('student');
                 font-size: 1.5rem;
             }
             
-            .card-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .view-all {
-                align-self: flex-end;
-            }
-            
-            .grades-table th, 
-            .grades-table td {
-                padding: 12px 8px;
-                font-size: 0.85rem;
-            }
-            
             .quick-links {
                 grid-template-columns: 1fr;
             }
@@ -668,42 +316,6 @@ checkAccess('student');
                 height: 50px;
                 font-size: 1.5rem;
                 margin-right: 15px;
-            }
-            
-            .schedule-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .schedule-time {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            
-            .schedule-details {
-                padding-left: 0;
-                border-left: none;
-                padding-top: 10px;
-                border-top: 2px solid var(--light-bg);
-            }
-            
-            .announcement-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .announcement-icon {
-                margin-bottom: 10px;
-            }
-            
-            .assignment-item {
-                flex-direction: column;
-            }
-            
-            .assignment-due {
-                width: 100%;
-                text-align: left;
-                margin-bottom: 10px;
             }
         }
     </style>
@@ -739,9 +351,9 @@ checkAccess('student');
                         <span class="notification-badge">3</span>
                     </div>
                     
-                    <div class="header-action" id="messagesBtn">
+                    <div class="header-action" id="messagesBtn" onclick="window.location.href='student-messages.php'" style="cursor: pointer;">
                         <i class="fas fa-envelope"></i>
-                        <span class="notification-badge">2</span>
+                        <span class="notification-badge"><?php echo $messageCount; ?></span>
                     </div>
                     
                     <div class="header-action" id="profileBtn">
@@ -754,7 +366,7 @@ checkAccess('student');
             <div class="dashboard-content">
                 <?php
                 // Set the default timezone
-                date_default_timezone_set('Africa/Lagos'); // Update this to your local timezone if needed
+                date_default_timezone_set('Africa/Lagos');
                 
                 $hour = date('H');
                 if ($hour >= 0 && $hour < 12) {
@@ -769,396 +381,63 @@ checkAccess('student');
                 <div class="welcome-banner">
                     <div class="welcome-text">
                         <h2><?php echo $greeting . ", " . htmlspecialchars($_SESSION['full_name']); ?>!</h2>
-                        <p>You have 3 assignments due this week. Next class: Mathematics at 10:00 AM in Room 205.</p>
                     </div>
                     <div class="welcome-stats">
                         <div class="stat-item">
-                            <h3>3.75</h3>
-                            <p>Current GPA</p>
+                            <h3><?php echo $average; ?>%</h3>
+                            <p>Current Average</p>
                         </div>
                         <div class="stat-item">
-                            <h3>96%</h3>
-                            <p>Attendance</p>
-                        </div>
-                        <div class="stat-item">
-                            <h3>#8</h3>
-                            <p>Class Rank</p>
+                            <h3><?php echo htmlspecialchars($studentClass); ?></h3>
+                            <p>Current Class</p>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Quick Stats -->
                 <div class="quick-stats">
+                    <div class="stat-card class">
+                        <div class="stat-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3><?php echo htmlspecialchars($studentClass); ?></h3>
+                            <p>Current Class</p>
+                        </div>
+                    </div>
+
                     <div class="stat-card grades">
                         <div class="stat-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>3.75</h3>
-                            <p>Current GPA</p>
-                            <p style="font-size: 0.85rem; color: var(--success);">↑ 0.15 from last term</p>
+                            <h3><?php echo $average; ?>%</h3>
+                            <p>Current Average</p>
                         </div>
                     </div>
                     
                     <div class="stat-card attendance">
                         <div class="stat-icon">
-                            <i class="fas fa-calendar-check"></i>
+                            <i class="fas fa-comments"></i>
                         </div>
                         <div class="stat-info">
-                            <h3>96%</h3>
-                            <p>Attendance Rate</p>
-                            <p style="font-size: 0.85rem; color: var(--success);">Only 3 absences this term</p>
+                            <h3><?php echo $messageCount; ?></h3>
+                            <p>Messages</p>
                         </div>
                     </div>
-                    
-                    <div class="stat-card assignments">
-                        <div class="stat-icon">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>5</h3>
-                            <p>Pending Assignments</p>
-                            <p style="font-size: 0.85rem; color: var(--warning);">2 due this week</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card events">
-                        <div class="stat-icon">
-                            <i class="fas fa-calendar-day"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3>3</h3>
-                            <p>Upcoming Events</p>
-                            <p style="font-size: 0.85rem; color: var(--info);">Science Fair next week</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Dashboard Grid -->
-                <div class="dashboard-grid">
-                    <!-- Left Column -->
-                    <div>
-                        <!-- Recent Grades -->
-                        <div class="grades-card dashboard-card">
-                            <div class="card-header">
-                                <h3>Recent Grades</h3>
-                                <a href="student-grades.html" class="view-all">View All Grades</a>
-                            </div>
-                            
-                            <div class="table-responsive">
-                                <table class="grades-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Course</th>
-                                            <th>Assignment</th>
-                                            <th>Grade</th>
-                                            <th>Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="course-info">
-                                                    <div class="course-icon">
-                                                        <i class="fas fa-calculator"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="course-name">Mathematics</div>
-                                                        <div class="course-teacher">Dr. Smith</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Algebra Test 3</td>
-                                            <td><span class="grade-badge grade-a">A (95%)</span></td>
-                                            <td>Oct 15, 2023</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="course-info">
-                                                    <div class="course-icon">
-                                                        <i class="fas fa-atom"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="course-name">Physics</div>
-                                                        <div class="course-teacher">Ms. Johnson</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Lab Report 2</td>
-                                            <td><span class="grade-badge grade-b">B+ (88%)</span></td>
-                                            <td>Oct 12, 2023</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="course-info">
-                                                    <div class="course-icon">
-                                                        <i class="fas fa-code"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="course-name">Computer Science</div>
-                                                        <div class="course-teacher">Mr. Chen</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Programming Project</td>
-                                            <td><span class="grade-badge grade-a">A- (92%)</span></td>
-                                            <td>Oct 10, 2023</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="course-info">
-                                                    <div class="course-icon">
-                                                        <i class="fas fa-book"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="course-name">English</div>
-                                                        <div class="course-teacher">Ms. Davis</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Essay - Literature</td>
-                                            <td><span class="grade-badge grade-b">B (85%)</span></td>
-                                            <td>Oct 8, 2023</td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="course-info">
-                                                    <div class="course-icon">
-                                                        <i class="fas fa-flask"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="course-name">Chemistry</div>
-                                                        <div class="course-teacher">Dr. Williams</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Chapter 4 Quiz</td>
-                                            <td><span class="grade-badge grade-a">A (96%)</span></td>
-                                            <td>Oct 5, 2023</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Chart -->
-                        <div class="progress-chart dashboard-card">
-                            <div class="card-header">
-                                <h3>Academic Progress</h3>
-                                <a href="student-grades.html" class="view-all">View Details</a>
-                            </div>
-                            
-                            <div class="chart-container">
-                                <div class="chart-placeholder">
-                                    <i class="fas fa-chart-bar"></i>
-                                    <p>Academic Progress Chart</p>
-                                    <p style="font-size: 0.9rem;">(Chart.js would be implemented here)</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Right Column -->
-                    <div>
-                        <!-- Today's Schedule -->
-                        <div class="schedule-card dashboard-card">
-                            <div class="card-header">
-                                <h3>Today's Schedule</h3>
-                                <a href="student-schedule.html" class="view-all">Full Schedule</a>
-                            </div>
-                            
-                            <ul class="schedule-list">
-                                <li class="schedule-item">
-                                    <div class="schedule-time">
-                                        <div class="time">8:30 AM</div>
-                                        <div class="duration">45 min</div>
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>Mathematics</h4>
-                                        <p>Dr. Robert Smith</p>
-                                        <span class="schedule-room">Room 205</span>
-                                    </div>
-                                </li>
-                                
-                                <li class="schedule-item">
-                                    <div class="schedule-time">
-                                        <div class="time">9:30 AM</div>
-                                        <div class="duration">45 min</div>
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>Physics</h4>
-                                        <p>Ms. Emily Johnson</p>
-                                        <span class="schedule-room">Lab 102</span>
-                                    </div>
-                                </li>
-                                
-                                <li class="schedule-item">
-                                    <div class="schedule-time">
-                                        <div class="time">10:30 AM</div>
-                                        <div class="duration">45 min</div>
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>English Literature</h4>
-                                        <p>Mr. David Chen</p>
-                                        <span class="schedule-room">Room 312</span>
-                                    </div>
-                                </li>
-                                
-                                <li class="schedule-item">
-                                    <div class="schedule-time">
-                                        <div class="time">11:30 AM</div>
-                                        <div class="duration">45 min</div>
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>Computer Science</h4>
-                                        <p>Ms. Patricia Miller</p>
-                                        <span class="schedule-room">Lab 208</span>
-                                    </div>
-                                </li>
-                                
-                                <li class="schedule-item">
-                                    <div class="schedule-time">
-                                        <div class="time">1:00 PM</div>
-                                        <div class="duration">60 min</div>
-                                    </div>
-                                    <div class="schedule-details">
-                                        <h4>Study Hall</h4>
-                                        <p>Library - Quiet Study Area</p>
-                                        <span class="schedule-room">Library</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <!-- Announcements -->
-                        <div class="announcements-card dashboard-card">
-                            <div class="card-header">
-                                <h3>Recent Announcements</h3>
-                                <a href="#" class="view-all">View All</a>
-                            </div>
-                            
-                            <ul class="announcements-list">
-                                <li class="announcement-item">
-                                    <div class="announcement-header">
-                                        <div class="announcement-icon">
-                                            <i class="fas fa-bullhorn"></i>
-                                        </div>
-                                        <div>
-                                            <div class="announcement-title">Science Fair Registration</div>
-                                            <div class="announcement-meta">
-                                                <span><i class="far fa-calendar"></i> Oct 20, 2023</span>
-                                                <span><i class="fas fa-user"></i> Principal's Office</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="announcement-content">
-                                        Registration for the Annual Science Fair is now open. Submit your project proposals by November 5th.
-                                    </div>
-                                </li>
-                                
-                                <li class="announcement-item">
-                                    <div class="announcement-header">
-                                        <div class="announcement-icon">
-                                            <i class="fas fa-exclamation-circle"></i>
-                                        </div>
-                                        <div>
-                                            <div class="announcement-title">Library Closure</div>
-                                            <div class="announcement-meta">
-                                                <span><i class="far fa-calendar"></i> Oct 18, 2023</span>
-                                                <span><i class="fas fa-user"></i> Library Department</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="announcement-content">
-                                        The main library will be closed this Friday for maintenance. Please plan your studies accordingly.
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Upcoming Assignments -->
-                <div class="progress-chart dashboard-card">
-                    <div class="card-header">
-                        <h3>Upcoming Assignments</h3>
-                        <a href="student-assignments.html" class="view-all">View All Assignments</a>
-                    </div>
-                    
-                    <ul class="assignments-list">
-                        <li class="assignment-item">
-                            <div class="assignment-due">
-                                <div class="assignment-day">24</div>
-                                <div class="assignment-month">Oct</div>
-                            </div>
-                            <div class="assignment-details">
-                                <h4>Physics Lab Report</h4>
-                                <p>Complete lab report for experiment on Newton's Laws. Include data analysis and conclusions.</p>
-                                <span class="assignment-course">Physics</span>
-                                <span class="assignment-status status-pending">Pending</span>
-                            </div>
-                        </li>
-                        
-                        <li class="assignment-item">
-                            <div class="assignment-due">
-                                <div class="assignment-day">26</div>
-                                <div class="assignment-month">Oct</div>
-                            </div>
-                            <div class="assignment-details">
-                                <h4>Mathematics Problem Set</h4>
-                                <p>Chapter 5 exercises: Quadratic Equations and Functions. Problems 1-25 odd.</p>
-                                <span class="assignment-course">Mathematics</span>
-                                <span class="assignment-status status-pending">Pending</span>
-                            </div>
-                        </li>
-                        
-                        <li class="assignment-item">
-                            <div class="assignment-due">
-                                <div class="assignment-day">28</div>
-                                <div class="assignment-month">Oct</div>
-                            </div>
-                            <div class="assignment-details">
-                                <h4>English Essay</h4>
-                                <p>Compare and contrast essay on two literary works studied this term. 1500 words minimum.</p>
-                                <span class="assignment-course">English</span>
-                                <span class="assignment-status status-submitted">Submitted</span>
-                            </div>
-                        </li>
-                        
-                        <li class="assignment-item">
-                            <div class="assignment-due">
-                                <div class="assignment-day">30</div>
-                                <div class="assignment-month">Oct</div>
-                            </div>
-                            <div class="assignment-details">
-                                <h4>Computer Science Project</h4>
-                                <p>Final submission for the web development project. Include source code and documentation.</p>
-                                <span class="assignment-course">Computer Science</span>
-                                <span class="assignment-status status-pending">Pending</span>
-                            </div>
-                        </li>
-                    </ul>
                 </div>
                 
                 <!-- Quick Links -->
                 <div class="quick-links">
-                    <a href="student-courses.html" class="link-card">
+                    <a href="course_registration.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-book-open"></i>
                         </div>
-                        <h4>Course Materials</h4>
-                        <p>Access lecture notes, slides, and resources</p>
+                        <h4>Course Registration</h4>
+                        <p>Register for your courses online</p>
                     </a>
                     
-                    <a href="student-assignments.html" class="link-card">
-                        <div class="link-icon">
-                            <i class="fas fa-tasks"></i>
-                        </div>
-                        <h4>Submit Assignment</h4>
-                        <p>Upload and submit your assignments online</p>
-                    </a>
-                    
-                    <a href="student-grades.html" class="link-card">
+                    <a href="report_card.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-chart-bar"></i>
                         </div>
@@ -1166,7 +445,7 @@ checkAccess('student');
                         <p>View detailed grade reports and feedback</p>
                     </a>
                     
-                    <a href="student-attendance.html" class="link-card">
+                    <a href="student-attendance.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-calendar-check"></i>
                         </div>
@@ -1174,7 +453,7 @@ checkAccess('student');
                         <p>Check your attendance record and history</p>
                     </a>
                     
-                    <a href="student-schedule.html" class="link-card">
+                    <a href="student-schedule.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-calendar-alt"></i>
                         </div>
@@ -1182,7 +461,7 @@ checkAccess('student');
                         <p>View your weekly class schedule</p>
                     </a>
                     
-                    <a href="student-messages.html" class="link-card">
+                    <a href="student-messages.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-comments"></i>
                         </div>
@@ -1193,8 +472,7 @@ checkAccess('student');
                 
                 <!-- Footer -->
                 <div class="dashboard-footer">
-                    <p>&copy; 2023 T&T School Management System. All rights reserved. | Student Portal v2.2</p>
-                    <p style="margin-top: 10px; font-size: 0.85rem;">Academic Year: 2023-2024 | Term 2 | Last Login: Today, 9:15 AM</p>
+                    <p>&copy; <?php echo date('Y'); ?> T&T School Management System. All rights reserved. | Student Portal v2.2</p>
                 </div>
             </div>
         </div>
@@ -1205,109 +483,23 @@ checkAccess('student');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const menuToggle = document.getElementById('menuToggle');
-        const searchBtn = document.getElementById('searchBtn');
-        const notificationBtn = document.getElementById('notificationBtn');
-        const messagesBtn = document.getElementById('messagesBtn');
-        const profileBtn = document.getElementById('profileBtn');
-        
-        // Student data (Synchronized with PHP Session)
-        const studentData = {
-            name: "<?php echo htmlspecialchars($_SESSION['full_name']); ?>",
-            grade: "10",
-            section: "A",
-            gpa: 3.75,
-            attendance: 96,
-            rank: 8,
-            pendingAssignments: 5,
-            upcomingEvents: 3
-        };
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
-            // updateWelcomeMessage(); // Handled by PHP for initial load
-            simulateLiveUpdates();
-        });
         
         // Setup event listeners
-        function setupEventListeners() {
-            // ... (keep existing toggle logic)
-            
-        // Update welcome message based on time of day (JS version for live feel if needed)
-        function updateWelcomeMessageJS() {
-            const hour = new Date().getHours();
-            let greeting = "Good morning";
-            
-            if (hour >= 12 && hour < 16) {
-                greeting = "Good Afternoon";
-            } else if (hour >= 16 || hour < 0) {
-                greeting = "Good Evening";
+        document.addEventListener('DOMContentLoaded', function() {
+            if (menuToggle) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                });
             }
             
-            document.querySelector('.welcome-text h2').textContent = `${greeting}, ${studentData.name}!`;
-        }
-        
-        // Simulate live updates
-        function simulateLiveUpdates() {
-            // Update time in schedule
-            setInterval(() => {
-                const scheduleItems = document.querySelectorAll('.schedule-time .time');
-                const now = new Date();
-                const currentHour = now.getHours();
-                const currentMinute = now.getMinutes();
-                
-                scheduleItems.forEach(item => {
-                    const timeText = item.textContent;
-                    const [hour, minute] = timeText.replace(' AM', '').replace(' PM', '').split(':').map(Number);
-                    
-                    // Add AM/PM indicator
-                    let displayHour = hour;
-                    let ampm = 'AM';
-                    
-                    if (hour >= 12) {
-                        ampm = 'PM';
-                        if (hour > 12) displayHour = hour - 12;
-                    }
-                    
-                    item.textContent = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
-                    
-                    // Highlight current/upcoming class
-                    const scheduleItem = item.closest('.schedule-item');
-                    const scheduleHour = hour < 8 ? hour + 12 : hour; // Convert to 24-hour format
-                    
-                    if (scheduleHour === currentHour && Math.abs(minute - currentMinute) <= 5) {
-                        scheduleItem.style.backgroundColor = 'rgba(30, 136, 229, 0.05)';
-                        scheduleItem.style.borderLeft = '3px solid var(--accent-blue)';
-                    } else {
-                        scheduleItem.style.backgroundColor = '';
-                        scheduleItem.style.borderLeft = '';
-                    }
+            if (overlay) {
+                overlay.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
                 });
-            }, 60000); // Update every minute
-            
-            // Update pending assignments count
-            setInterval(() => {
-                const assignmentsCard = document.querySelector('.stat-card.assignments .stat-info h3');
-                const currentCount = parseInt(assignmentsCard.textContent);
-                
-                // Occasionally add or remove an assignment
-                if (Math.random() > 0.9) {
-                    const newCount = Math.max(0, currentCount + (Math.random() > 0.5 ? 1 : -1));
-                    assignmentsCard.textContent = newCount;
-                    
-                    // Update the subtitle
-                    const subtitle = assignmentsCard.nextElementSibling.nextElementSibling;
-                    if (newCount > 0) {
-                        const dueThisWeek = Math.min(newCount, Math.floor(Math.random() * 3) + 1);
-                        subtitle.textContent = `${dueThisWeek} due this week`;
-                        subtitle.style.color = 'var(--warning)';
-                    } else {
-                        subtitle.textContent = 'All caught up!';
-                        subtitle.style.color = 'var(--success)';
-                    }
-                }
-            }, 30000); // Update every 30 seconds
-        }
+            }
+        });
         
         // Handle window resize
         window.addEventListener('resize', function() {
@@ -1318,93 +510,14 @@ checkAccess('student');
             
             // Update responsive elements
             const welcomeStats = document.querySelector('.welcome-stats');
-            if (window.innerWidth < 1200) {
-                welcomeStats.style.display = 'none';
-            } else {
-                welcomeStats.style.display = 'flex';
+            if (welcomeStats) {
+                if (window.innerWidth < 1200) {
+                    welcomeStats.style.display = 'none';
+                } else {
+                    welcomeStats.style.display = 'flex';
+                }
             }
         });
-        
-        // Add a simple notification system
-        function showNotification(title, message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 100px;
-                right: 30px;
-                background-color: var(--white);
-                border-radius: 8px;
-                padding: 15px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-                z-index: 1000;
-                max-width: 300px;
-                border-left: 4px solid var(--primary-medium);
-                animation: slideIn 0.3s ease;
-            `;
-            
-            if (type === 'success') {
-                notification.style.borderLeftColor = 'var(--success)';
-            } else if (type === 'warning') {
-                notification.style.borderLeftColor = 'var(--warning)';
-            } else if (type === 'error') {
-                notification.style.borderLeftColor = 'var(--danger)';
-            }
-            
-            notification.innerHTML = `
-                <h4 style="margin-bottom: 8px; font-size: 1rem;">${title}</h4>
-                <p style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 10px;">${message}</p>
-                <button style="background: none; border: none; color: var(--primary-medium); font-size: 0.8rem; cursor: pointer;">Dismiss</button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Add dismiss button functionality
-            const dismissBtn = notification.querySelector('button');
-            dismissBtn.addEventListener('click', () => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            });
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease';
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 300);
-                }
-            }, 5000);
-        }
-        
-        // Add CSS for animations
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Show a sample notification after 3 seconds
-        setTimeout(() => {
-            showNotification('New Assignment Posted', 'Physics Lab Report due on October 24th', 'info');
-        }, 3000);
-        
-        // Show another notification after 8 seconds
-        setTimeout(() => {
-            showNotification('Grade Updated', 'Your Mathematics test grade has been posted', 'success');
-        }, 8000);
     </script>
 </body>
 </html>
