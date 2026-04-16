@@ -461,6 +461,14 @@ $studentClass = $stmt->fetchColumn() ?: 'N/A';
                         <p>View your weekly class schedule</p>
                     </a>
                     
+                    <a href="student_payment.php" class="link-card">
+                        <div class="link-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h4>School Fees</h4>
+                        <p>Pay your tuition and other school fees</p>
+                    </a>
+                    
                     <a href="student-messages.php" class="link-card">
                         <div class="link-icon">
                             <i class="fas fa-comments"></i>

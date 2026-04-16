@@ -384,16 +384,33 @@ $student = $stmt->fetch();
                 callback: function(response) {
                     // Success! 
                     console.log(response);
-                    successToast.classList.add('show');
                     
-                    // In a real app, you would verify the transaction on your server here
-                    // fetch('verify_payment.php?reference=' + response.reference)...
+                    // Show loading state
+                    payBtn.disabled = true;
+                    payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
-                    setTimeout(() => {
-                        successToast.classList.remove('show');
-                        // Optionally redirect to a confirmation page
-                        window.location.reload();
-                    }, 4000);
+                    // Verify the transaction on your server
+                    fetch('verify_payment.php?reference=' + response.reference)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                successToast.classList.add('show');
+                                setTimeout(() => {
+                                    successToast.classList.remove('show');
+                                    window.location.reload();
+                                }, 3000);
+                            } else {
+                                alert('Verification failed: ' + data.message);
+                                payBtn.disabled = false;
+                                updatePayButtonText();
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('An error occurred while verifying the payment.');
+                            payBtn.disabled = false;
+                            updatePayButtonText();
+                        });
                 },
                 onClose: function() {
                     alert('Transaction cancelled.');
