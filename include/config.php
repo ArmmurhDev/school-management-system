@@ -16,8 +16,8 @@ define('DB_NAME', 'school_management');
 
 
 // Paystack API Keys
-define('PAYSTACK_PUBLIC_KEY', 'pk_test_193f896988520fc7c28208ad3bde12332796f586');
-define('PAYSTACK_SECRET_KEY', 'sk_test_9a7c19bf727859be993217f470baab8f91f9272e');
+define('PAYSTACK_PUBLIC_KEY', '');
+define('PAYSTACK_SECRET_KEY', '');
 
 // Database Connection
 try {
